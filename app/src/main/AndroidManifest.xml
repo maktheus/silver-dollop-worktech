@@ -4,6 +4,39 @@
     <!-- Required for /proc/net/tcp port checks against localhost -->
     <uses-permission android:name="android.permission.INTERNET" />
 
+    <!--
+        Android 11+ (API 30+) package-visibility filtering: apps are invisible to
+        PackageManager.getPackageInfo() unless explicitly declared here or the broad
+        QUERY_ALL_PACKAGES permission is granted. We enumerate every known clone/
+        virtual-space package so CloneAnalyzer can detect them on modern devices.
+    -->
+    <queries>
+        <package android:name="com.lbe.parallel.intl" />
+        <package android:name="com.excelliance.dualaid" />
+        <package android:name="com.parallel.space.lite" />
+        <package android:name="com.parallel.space.pro" />
+        <package android:name="cn.parallel.space.lite" />
+        <package android:name="com.mobiwia.dualspace" />
+        <package android:name="com.slspace.dualspace" />
+        <package android:name="com.buk.android.cloneapp" />
+        <package android:name="com.phonemaster.speed" />
+        <package android:name="com.dualspace.multiaccount" />
+        <package android:name="com.multi.clone.space" />
+        <package android:name="com.twofaces.multiaccounts" />
+        <package android:name="com.fancyclone.app" />
+        <package android:name="com.dual.sim.space" />
+        <package android:name="me.weishu.exp" />
+        <package android:name="io.va.exposed" />
+        <package android:name="com.qihoo.appstore.virtualapp.stub" />
+        <package android:name="com.virtual.box" />
+        <package android:name="com.ludashi.superboost" />
+        <package android:name="com.dual.account.multispace" />
+        <package android:name="com.polestar.domultiple" />
+        <package android:name="com.flyingaway.vphone" />
+        <package android:name="com.lody.virtual" />
+        <package android:name="com.glow.android.secure.space" />
+    </queries>
+
     <application
         android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
