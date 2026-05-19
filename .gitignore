@@ -1,0 +1,19 @@
+# Gradle build outputs and caches
+.gradle/
+build/
+app/build/
+
+# Local Android SDK path (machine-specific)
+local.properties
+
+# Android Studio project files
+*.iml
+.idea/
+*.DS_Store
+
+# Compiled class files
+*.class
+
+# Generated APKs and bundles
+*.apk
+*.aab
