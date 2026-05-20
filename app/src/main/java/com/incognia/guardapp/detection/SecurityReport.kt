@@ -16,11 +16,11 @@ data class SecurityReport(val signals: List<DetectionSignal>) {
         get() = signals.filter { it.severity == Severity.LOW }
 
     val riskScore: Int
-        get() = signals.sumOf {
-            when (it.severity) {
+        get() = signals.sumOf { signal ->
+            when (signal.severity) {
                 Severity.HIGH -> 3
                 Severity.MEDIUM -> 1
                 Severity.LOW -> 0
-            }
+            }.toInt()
         }
 }
