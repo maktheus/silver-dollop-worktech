@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Required for /proc/net/tcp port checks against localhost -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <!--
+        Android 11+ (API 30+) package-visibility filtering: apps are invisible to
+        PackageManager.getPackageInfo() unless explicitly declared here or the broad
+        QUERY_ALL_PACKAGES permission is granted. We enumerate every known clone/
+        virtual-space package so CloneAnalyzer can detect them on modern devices.
+    -->
+    <queries>
+        <package android:name="com.lbe.parallel.intl" />
+        <package android:name="com.excelliance.dualaid" />
+        <package android:name="com.parallel.space.lite" />
+        <package android:name="com.parallel.space.pro" />
+        <package android:name="cn.parallel.space.lite" />
+        <package android:name="com.mobiwia.dualspace" />
+        <package android:name="com.slspace.dualspace" />
+        <package android:name="com.buk.android.cloneapp" />
+        <package android:name="com.phonemaster.speed" />
+        <package android:name="com.dualspace.multiaccount" />
+        <package android:name="com.multi.clone.space" />
+        <package android:name="com.twofaces.multiaccounts" />
+        <package android:name="com.fancyclone.app" />
+        <package android:name="com.dual.sim.space" />
+        <package android:name="me.weishu.exp" />
+        <package android:name="io.va.exposed" />
+        <package android:name="com.qihoo.appstore.virtualapp.stub" />
+        <package android:name="com.virtual.box" />
+        <package android:name="com.ludashi.superboost" />
+        <package android:name="com.dual.account.multispace" />
+        <package android:name="com.polestar.domultiple" />
+        <package android:name="com.flyingaway.vphone" />
+        <package android:name="com.lody.virtual" />
+        <package android:name="com.glow.android.secure.space" />
+    </queries>
+
+    <application
+        android:allowBackup="false"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:theme="@style/Theme.GuardApp"
+        android:networkSecurityConfig="@xml/network_security_config">
+
+        <activity
+            android:name=".ui.MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+    </application>
+</manifest>
