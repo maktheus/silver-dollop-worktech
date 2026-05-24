@@ -3,6 +3,7 @@ package com.incognia.guardapp.detection
 import android.content.Context
 import com.incognia.guardapp.detection.analyzers.CloneAnalyzer
 import com.incognia.guardapp.detection.analyzers.EmulatorAnalyzer
+import com.incognia.guardapp.detection.analyzers.RootDetector
 import com.incognia.guardapp.detection.analyzers.SignatureAnalyzer
 import com.incognia.guardapp.detection.analyzers.VirtualizationAnalyzer
 import kotlinx.coroutines.Dispatchers
@@ -18,17 +19,13 @@ import kotlinx.coroutines.coroutineScope
  * failure is silently swallowed so that a single crash cannot suppress the
  * entire report.
  *
- * Adding new detection domains only requires implementing [EnvironmentAnalyzer]
- * and adding an instance to [analyzers].
+ * Use [create] for production. Use [create] with a custom [analyzers] list
+ * to inject fakes/mocks in tests.
  */
-class EnvironmentGuard private constructor(private val context: Context) {
-
-    private val analyzers: List<EnvironmentAnalyzer> = listOf(
-        EmulatorAnalyzer(),
-        CloneAnalyzer(),
-        VirtualizationAnalyzer(),
-        SignatureAnalyzer(),
-    )
+class EnvironmentGuard private constructor(
+    private val context: Context,
+    private val analyzers: List<EnvironmentAnalyzer>,
+) {
 
     suspend fun generateReport(): SecurityReport = coroutineScope {
         val deferred = analyzers.map { analyzer ->
@@ -40,7 +37,22 @@ class EnvironmentGuard private constructor(private val context: Context) {
     }
 
     companion object {
-        fun create(context: Context): EnvironmentGuard =
-            EnvironmentGuard(context.applicationContext)
+        /** Production entry point — uses all built-in analyzers. */
+        fun create(context: Context): EnvironmentGuard = create(
+            context,
+            listOf(
+                EmulatorAnalyzer(),
+                CloneAnalyzer(),
+                VirtualizationAnalyzer(),
+                SignatureAnalyzer(),
+                RootDetector(),
+            ),
+        )
+
+        /** Test / custom entry point — inject any list of analyzers. */
+        fun create(
+            context: Context,
+            analyzers: List<EnvironmentAnalyzer>,
+        ): EnvironmentGuard = EnvironmentGuard(context.applicationContext, analyzers)
     }
 }

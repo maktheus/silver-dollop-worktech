@@ -13,6 +13,9 @@ import java.io.File
  * Detects app-cloning / dual-space environments such as:
  * App Cloner, Dual Space, Multi Account, 2Face, VirtualApp, Game Cloner.
  *
+ * Constructor parameters are injectable so unit tests can replace real
+ * system calls with fakes without needing Robolectric or a device.
+ *
  * Strategies:
  *  1. Package presence — known clone-framework packages installed on device.
  *  2. File artifacts — directories/libraries left by clone frameworks.
@@ -20,7 +23,14 @@ import java.io.File
  *  4. Data directory path — clone frameworks redirect the data dir outside /data/data/<pkg>.
  *  5. /proc/self/maps — clone framework native libraries loaded into this process.
  */
-class CloneAnalyzer : EnvironmentAnalyzer {
+class CloneAnalyzer(
+    private val uidProvider: () -> Int = { Process.myUid() },
+    private val fileProbe: (String) -> Boolean = { File(it).exists() },
+    private val packageChecker: (Context, String) -> Boolean = { ctx, pkg ->
+        runCatching { ctx.packageManager.getPackageInfo(pkg, 0); true }.getOrDefault(false)
+    },
+    private val dataDirProvider: (Context) -> String? = { it.applicationInfo?.dataDir },
+) : EnvironmentAnalyzer {
 
     override fun analyze(context: Context): List<DetectionSignal> =
         checkInstalledClonePackages(context) +
@@ -30,34 +40,31 @@ class CloneAnalyzer : EnvironmentAnalyzer {
 
     // ── 1. Installed clone packages ───────────────────────────────────────────
 
-    private fun checkInstalledClonePackages(context: Context): List<DetectionSignal> {
-        val pm = context.packageManager
-        return KNOWN_CLONE_PACKAGES.mapNotNull { pkg ->
-            runCatching { pm.getPackageInfo(pkg, 0) }.getOrNull()?.let {
+    private fun checkInstalledClonePackages(context: Context): List<DetectionSignal> =
+        KNOWN_CLONE_PACKAGES.mapNotNull { pkg ->
+            if (packageChecker(context, pkg)) {
                 DetectionSignal(
                     SignalCategory.CLONE_APP,
                     "Clone/virtual-space app installed: $pkg",
                     Severity.HIGH,
                 )
-            }
+            } else null
         }
-    }
 
     // ── 2. File artifacts ─────────────────────────────────────────────────────
 
     private fun checkCloneArtifactFiles(): List<DetectionSignal> =
-        CLONE_ARTIFACT_PATHS.filter { File(it).exists() }.map { path ->
+        CLONE_ARTIFACT_PATHS.filter { fileProbe(it) }.map { path ->
             DetectionSignal(SignalCategory.SUSPICIOUS_PATH, "Clone framework artifact: $path", Severity.HIGH)
         }
 
     // ── 3 & 4. Secondary-user / redirected data dir ───────────────────────────
 
-    private fun checkSecondaryUserEnvironment(context: Context): List<DetectionSignal> {
+    internal fun checkSecondaryUserEnvironment(context: Context): List<DetectionSignal> {
         val signals = mutableListOf<DetectionSignal>()
 
         // UID-based check: Android assigns UIDs in blocks of 100 000 per user.
-        // A secondary user's app UID will be ≥ 100 000.
-        val userId = Process.myUid() / 100_000
+        val userId = uidProvider() / 100_000
         if (userId != 0) {
             signals += DetectionSignal(
                 SignalCategory.CLONE_APP,
@@ -66,9 +73,8 @@ class CloneAnalyzer : EnvironmentAnalyzer {
             )
         }
 
-        // Data-dir check: on a genuine primary-user install, dataDir is under
-        // /data/data/<pkg> or /data/user/0/<pkg>. Clone frameworks redirect it.
-        val dataDir = context.applicationInfo.dataDir ?: return signals
+        // Data-dir check: clone frameworks redirect dataDir outside the primary path.
+        val dataDir = dataDirProvider(context) ?: return signals
         val expectedPaths = listOf(
             "/data/data/${context.packageName}",
             "/data/user/0/${context.packageName}",
@@ -108,8 +114,8 @@ class CloneAnalyzer : EnvironmentAnalyzer {
 
     private companion object {
         val KNOWN_CLONE_PACKAGES = listOf(
-            "com.lbe.parallel.intl",           // Parallel Space
-            "com.excelliance.dualaid",          // Dual Space
+            "com.lbe.parallel.intl",
+            "com.excelliance.dualaid",
             "com.parallel.space.lite",
             "com.parallel.space.pro",
             "cn.parallel.space.lite",
@@ -122,15 +128,15 @@ class CloneAnalyzer : EnvironmentAnalyzer {
             "com.twofaces.multiaccounts",
             "com.fancyclone.app",
             "com.dual.sim.space",
-            "me.weishu.exp",                   // VirtualXposed
-            "io.va.exposed",                   // VA Exposed
+            "me.weishu.exp",
+            "io.va.exposed",
             "com.qihoo.appstore.virtualapp.stub",
             "com.virtual.box",
             "com.ludashi.superboost",
             "com.dual.account.multispace",
             "com.polestar.domultiple",
             "com.flyingaway.vphone",
-            "com.lody.virtual",                // VirtualApp
+            "com.lody.virtual",
             "com.glow.android.secure.space",
         )
 

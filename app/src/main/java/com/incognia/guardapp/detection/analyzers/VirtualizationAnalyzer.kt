@@ -121,26 +121,43 @@ class VirtualizationAnalyzer : EnvironmentAnalyzer {
      * We only flag when the local port matches Frida's default AND the socket is in
      * LISTEN state, preventing false positives from remote-endpoint fields.
      */
-    private fun checkFridaTcpTable(path: String): List<DetectionSignal> {
+    private fun checkFridaTcpTable(path: String): List<DetectionSignal> =
+        runCatching { parseTcpTable(File(path).readLines(), path) }.getOrDefault(emptyList())
+
+    /**
+     * Pure parser exposed as [internal] so unit tests can feed synthetic rows
+     * without touching the real filesystem.
+     *
+     * /proc/net/tcp row layout (whitespace-delimited):
+     *   sl  local_address  rem_address  st  tx_queue  ...
+     * local_address = "XXXXXXXX:PPPP" (IP little-endian hex, port big-endian hex)
+     * st = "0A" means TCP_LISTEN.
+     *
+     * We match only when the LOCAL port equals [FRIDA_PORT] AND the socket
+     * is in LISTEN state, so remote-endpoint fields with the same hex value
+     * do not produce false positives.
+     */
+    internal fun parseTcpTable(lines: List<String>, sourcePath: String = ""): List<DetectionSignal> {
+        // Hardcode the expected port hex to avoid any private-companion-object
+        // constant-inlining edge cases when called from an `internal` function.
+        // 27042 = 0x699A
+        val fridaPortHex = "699A"
         val signals = mutableListOf<DetectionSignal>()
-        val fridaPortHex = "%04X".format(FRIDA_PORT)
-        try {
-            File(path).forEachLine { line ->
-                val parts = line.trim().split(Regex("\\s+"))
-                // parts[0]=sl, parts[1]=local_addr, parts[2]=rem_addr, parts[3]=state
-                if (parts.size >= 4) {
-                    val localPort = parts[1].substringAfter(":", "")
-                    val state = parts[3]
-                    if (localPort.equals(fridaPortHex, ignoreCase = true) && state == "0A") {
-                        signals += DetectionSignal(
-                            SignalCategory.VIRTUALIZATION,
-                            "Frida-default port ($FRIDA_PORT) in LISTEN state per $path",
-                            Severity.MEDIUM,
-                        )
-                    }
+        for (line in lines) {
+            val parts = line.trim().split(" ").filter { it.isNotEmpty() }
+            if (parts.size >= 4) {
+                val localPort = parts[1].substringAfter(":", missingDelimiterValue = "")
+                val state = parts[3]
+                if (localPort.equals(fridaPortHex, ignoreCase = true) && state.equals("0A", ignoreCase = true)) {
+                    signals += DetectionSignal(
+                        SignalCategory.VIRTUALIZATION,
+                        "Frida-default port ($FRIDA_PORT) in LISTEN state" +
+                            if (sourcePath.isNotEmpty()) " per $sourcePath" else "",
+                        Severity.MEDIUM,
+                    )
                 }
             }
-        } catch (_: Exception) {}
+        }
         return signals
     }
 

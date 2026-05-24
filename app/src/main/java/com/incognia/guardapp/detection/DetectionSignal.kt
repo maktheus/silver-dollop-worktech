@@ -4,6 +4,7 @@ enum class SignalCategory(val displayName: String) {
     EMULATOR("Emulator"),
     CLONE_APP("Clone / Dual-Space App"),
     VIRTUALIZATION("Virtualization / Hooking"),
+    ROOT("Root / Superuser"),
     SIGNATURE("Signature / Integrity"),
     SUSPICIOUS_PATH("Suspicious Path"),
     SYSTEM_PROPERTY("Suspicious System Property"),
