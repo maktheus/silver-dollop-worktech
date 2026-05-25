@@ -21,4 +21,6 @@ data class DetectionSignal(
     val category: SignalCategory,
     val description: String,
     val severity: Severity,
+    /** Human-readable explanation of why this signal matters and what it means. */
+    val explanation: String = "",
 )

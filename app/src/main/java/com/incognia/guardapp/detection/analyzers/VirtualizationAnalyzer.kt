@@ -40,6 +40,8 @@ class VirtualizationAnalyzer : EnvironmentAnalyzer {
                 SignalCategory.VIRTUALIZATION,
                 "Hook/virtualization file found: $path",
                 Severity.HIGH,
+                "Arquivo de um framework de instrumentação/hooking encontrado. Indica que a ferramenta " +
+                    "foi instalada ou está preparada para execução neste dispositivo.",
             )
         }
 
@@ -57,6 +59,9 @@ class VirtualizationAnalyzer : EnvironmentAnalyzer {
                             SignalCategory.VIRTUALIZATION,
                             "$label detected in /proc/self/maps",
                             Severity.HIGH,
+                            "Biblioteca nativa de '$label' mapeada no espaço de memória deste processo. " +
+                                "Isso indica que o framework está ativo e pode estar interceptando " +
+                                "chamadas de método em tempo de execução.",
                         )
                     }
                 }
@@ -76,6 +81,9 @@ class VirtualizationAnalyzer : EnvironmentAnalyzer {
                     SignalCategory.VIRTUALIZATION,
                     "Xposed class accessible in classloader: $className",
                     Severity.HIGH,
+                    "O Xposed/LSPosed injeta automaticamente XposedBridge.jar no classloader de todo " +
+                        "processo ao iniciar. Se a classe é resolvível, o framework está ativo e pode " +
+                        "interceptar e modificar qualquer método Java/Kotlin em tempo de execução.",
                 )
             } catch (_: ClassNotFoundException) { /* expected on clean device */ }
         }
@@ -95,14 +103,14 @@ class VirtualizationAnalyzer : EnvironmentAnalyzer {
                     SignalCategory.VIRTUALIZATION,
                     "Frida server responding on localhost:$FRIDA_PORT",
                     Severity.HIGH,
+                    "O Frida é um framework de instrumentação dinâmica que permite interceptar e " +
+                        "modificar qualquer código em execução em tempo real, incluindo chamadas de " +
+                        "criptografia, autenticação e lógica de segurança. Porta padrão $FRIDA_PORT respondendo.",
                 )
             }
         } catch (_: Exception) { /* not listening */ }
 
         // /proc/net/tcp fallback — parse column-by-column to avoid false positives.
-        // Format: sl  local_address(IP:PORT)  rem_address  st  ...
-        // local_address is "XXXXXXXX:PPPP" where IP is little-endian hex and PORT is big-endian hex.
-        // State 0A = TCP_LISTEN. We require a LISTEN socket on the local side to confirm Frida.
         if (signals.none { it.description.contains("Frida server") }) {
             signals += checkFridaTcpTable("/proc/net/tcp")
             signals += checkFridaTcpTable("/proc/net/tcp6")
@@ -128,19 +136,8 @@ class VirtualizationAnalyzer : EnvironmentAnalyzer {
     /**
      * Pure parser exposed as [internal] so unit tests can feed synthetic rows
      * without touching the real filesystem.
-     *
-     * /proc/net/tcp row layout (whitespace-delimited):
-     *   sl  local_address  rem_address  st  tx_queue  ...
-     * local_address = "XXXXXXXX:PPPP" (IP little-endian hex, port big-endian hex)
-     * st = "0A" means TCP_LISTEN.
-     *
-     * We match only when the LOCAL port equals [FRIDA_PORT] AND the socket
-     * is in LISTEN state, so remote-endpoint fields with the same hex value
-     * do not produce false positives.
      */
     internal fun parseTcpTable(lines: List<String>, sourcePath: String = ""): List<DetectionSignal> {
-        // Hardcode the expected port hex to avoid any private-companion-object
-        // constant-inlining edge cases when called from an `internal` function.
         // 27042 = 0x699A
         val fridaPortHex = "699A"
         val signals = mutableListOf<DetectionSignal>()
@@ -155,6 +152,9 @@ class VirtualizationAnalyzer : EnvironmentAnalyzer {
                         "Frida-default port ($FRIDA_PORT) in LISTEN state" +
                             if (sourcePath.isNotEmpty()) " per $sourcePath" else "",
                         Severity.MEDIUM,
+                        "Entrada no /proc/net/tcp mostra a porta $FRIDA_PORT em estado LISTEN (0A). " +
+                            "O servidor Frida está aguardando conexão de scripts de instrumentação, " +
+                            "mesmo que a conexão TCP direta tenha falhado.",
                     )
                 }
             }

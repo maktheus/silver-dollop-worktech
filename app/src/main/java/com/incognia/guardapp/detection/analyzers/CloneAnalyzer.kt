@@ -47,6 +47,9 @@ class CloneAnalyzer(
                     SignalCategory.CLONE_APP,
                     "Clone/virtual-space app installed: $pkg",
                     Severity.HIGH,
+                    "App de espaço virtual instalado. Esses frameworks criam um sandbox que pode " +
+                        "isolar verificações de segurança — o app protegido roda 'dentro' do clone " +
+                        "sem acesso direto ao ambiente real.",
                 )
             } else null
         }
@@ -55,7 +58,13 @@ class CloneAnalyzer(
 
     private fun checkCloneArtifactFiles(): List<DetectionSignal> =
         DetectionSignatures.CLONE_ARTIFACT_PATHS.filter { fileProbe(it) }.map { path ->
-            DetectionSignal(SignalCategory.SUSPICIOUS_PATH, "Clone framework artifact: $path", Severity.HIGH)
+            DetectionSignal(
+                SignalCategory.SUSPICIOUS_PATH,
+                "Clone framework artifact: $path",
+                Severity.HIGH,
+                "Diretório de dados de um clone framework encontrado em disco. Persiste mesmo após " +
+                    "desinstalação do app clone, indicando uso anterior ou ativo do framework neste dispositivo.",
+            )
         }
 
     // ── 3 & 4. Secondary-user / redirected data dir ───────────────────────────
@@ -70,6 +79,9 @@ class CloneAnalyzer(
                 SignalCategory.CLONE_APP,
                 "App is running under Android user ID $userId (non-primary user space)",
                 Severity.HIGH,
+                "O Android atribui UIDs em blocos de 100.000 por usuário. UID ÷ 100.000 = $userId " +
+                    "indica que o app roda em um perfil secundário — técnica usada por clones para " +
+                    "isolar instâncias do mesmo app.",
             )
         }
 
@@ -84,6 +96,9 @@ class CloneAnalyzer(
                 SignalCategory.CLONE_APP,
                 "App data directory is outside the expected primary-user path: $dataDir",
                 Severity.HIGH,
+                "Frameworks de clonagem redirecionam o dataDir do app para fora do caminho primário " +
+                    "(/data/data/ ou /data/user/0/), colocando-o dentro do próprio container virtual. " +
+                    "Difícil de falsificar sem root.",
             )
         }
 
@@ -104,6 +119,9 @@ class CloneAnalyzer(
                             SignalCategory.CLONE_APP,
                             "$label detected in /proc/self/maps",
                             Severity.HIGH,
+                            "Biblioteca nativa do clone framework carregada no espaço de memória deste processo. " +
+                                "Diferente do nome do pacote (fácil de renomear), o path da .so compilada " +
+                                "geralmente preserva o namespace original do framework.",
                         )
                     }
                 }

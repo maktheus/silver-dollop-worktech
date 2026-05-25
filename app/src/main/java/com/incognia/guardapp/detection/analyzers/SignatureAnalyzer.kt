@@ -40,13 +40,14 @@ class SignatureAnalyzer : EnvironmentAnalyzer {
 
         signatures.firstOrNull()?.let { sig ->
             val sha256 = computeHash(sig, "SHA-256")
-            val sha1   = computeHash(sig, "SHA-1")
 
             // Informational — always emit so the UI can display the hash.
             signals += DetectionSignal(
                 SignalCategory.SIGNATURE,
                 "APK cert SHA-256: $sha256",
                 Severity.LOW,
+                "Hash criptográfico do certificado de assinatura do APK. Em produção, configure " +
+                    "EXPECTED_CERT_SHA256 com este valor para ativar a verificação de integridade.",
             )
 
             // Debug key detection via X.509 subject.
@@ -54,27 +55,34 @@ class SignatureAnalyzer : EnvironmentAnalyzer {
                 val cert = CertificateFactory.getInstance("X.509")
                     .generateCertificate(ByteArrayInputStream(sig.toByteArray())) as X509Certificate
                 val subject = cert.subjectDN.name
+
                 if (subject.contains("Android Debug", ignoreCase = true)) {
                     signals += DetectionSignal(
                         SignalCategory.SIGNATURE,
                         "App is signed with the Android debug key (subject: $subject)",
                         Severity.MEDIUM,
+                        "A chave de debug do Android é gerada automaticamente pelo SDK e é a mesma " +
+                            "para qualquer desenvolvedor nesta máquina. APKs assinados com ela nunca " +
+                            "deveriam chegar a usuários finais — distribua apenas via chave de release.",
                     )
                 }
                 signals += DetectionSignal(
                     SignalCategory.SIGNATURE,
                     "Certificate subject: $subject",
                     Severity.LOW,
+                    "Subject do certificado X.509 que assina este APK. Identifica o desenvolvedor/organização responsável.",
                 )
             } catch (_: Exception) {}
 
             // Integrity check against the expected production certificate.
-            // Replace EXPECTED_CERT_SHA256 with your actual release cert hash.
             if (EXPECTED_CERT_SHA256.isNotEmpty() && sha256 != EXPECTED_CERT_SHA256) {
                 signals += DetectionSignal(
                     SignalCategory.SIGNATURE,
                     "Certificate SHA-256 mismatch — expected $EXPECTED_CERT_SHA256, got $sha256",
                     Severity.HIGH,
+                    "O APK instalado foi assinado com uma chave diferente da original. Isso indica " +
+                        "que o app foi reempacotado — possivelmente com código malicioso inserido. " +
+                        "Qualquer modificação no APK invalida a assinatura original.",
                 )
             }
         }
@@ -99,6 +107,10 @@ class SignatureAnalyzer : EnvironmentAnalyzer {
                 SignalCategory.SIGNATURE,
                 "Install source: ${installer ?: "adb / unknown"}",
                 Severity.LOW,
+                if (installer == null)
+                    "App instalado diretamente via ADB ou fonte desconhecida. Normal durante desenvolvimento."
+                else
+                    "App instalado por: $installer.",
             )
 
             if (installer != null && installer !in DetectionSignatures.LEGITIMATE_INSTALLERS) {
@@ -106,6 +118,8 @@ class SignatureAnalyzer : EnvironmentAnalyzer {
                     SignalCategory.SIGNATURE,
                     "Unexpected install source: $installer (not a known app store)",
                     Severity.MEDIUM,
+                    "O app foi instalado por uma fonte não reconhecida como loja oficial. Pode indicar " +
+                        "distribuição de versão modificada fora dos canais oficiais (sideloading).",
                 )
             }
         } catch (_: Exception) {}
@@ -123,6 +137,9 @@ class SignatureAnalyzer : EnvironmentAnalyzer {
                     SignalCategory.SIGNATURE,
                     "Package name mismatch: declared=$declared vs runtime=$runtime",
                     Severity.HIGH,
+                    "O nome do pacote declarado no AndroidManifest.xml difere do nome de pacote em " +
+                        "tempo de execução. Alguns frameworks de clonagem alteram o nome em runtime " +
+                        "enquanto mantêm o manifest original — indicador forte de execução em container.",
                 )
             )
         } else emptyList()
