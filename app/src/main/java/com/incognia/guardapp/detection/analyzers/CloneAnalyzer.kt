@@ -1,9 +1,9 @@
 package com.incognia.guardapp.detection.analyzers
 
 import android.content.Context
-import android.content.pm.PackageManager
 import android.os.Process
 import com.incognia.guardapp.detection.DetectionSignal
+import com.incognia.guardapp.detection.DetectionSignatures
 import com.incognia.guardapp.detection.EnvironmentAnalyzer
 import com.incognia.guardapp.detection.Severity
 import com.incognia.guardapp.detection.SignalCategory
@@ -41,7 +41,7 @@ class CloneAnalyzer(
     // ── 1. Installed clone packages ───────────────────────────────────────────
 
     private fun checkInstalledClonePackages(context: Context): List<DetectionSignal> =
-        KNOWN_CLONE_PACKAGES.mapNotNull { pkg ->
+        DetectionSignatures.KNOWN_CLONE_PACKAGES.mapNotNull { pkg ->
             if (packageChecker(context, pkg)) {
                 DetectionSignal(
                     SignalCategory.CLONE_APP,
@@ -54,7 +54,7 @@ class CloneAnalyzer(
     // ── 2. File artifacts ─────────────────────────────────────────────────────
 
     private fun checkCloneArtifactFiles(): List<DetectionSignal> =
-        CLONE_ARTIFACT_PATHS.filter { fileProbe(it) }.map { path ->
+        DetectionSignatures.CLONE_ARTIFACT_PATHS.filter { fileProbe(it) }.map { path ->
             DetectionSignal(SignalCategory.SUSPICIOUS_PATH, "Clone framework artifact: $path", Severity.HIGH)
         }
 
@@ -97,7 +97,7 @@ class CloneAnalyzer(
         val reported = mutableSetOf<String>()
         try {
             File("/proc/self/maps").forEachLine { line ->
-                CLONE_MAP_PATTERNS.forEach { (pattern, label) ->
+                DetectionSignatures.CLONE_MAP_PATTERNS.forEach { (pattern, label) ->
                     if (pattern !in reported && line.contains(pattern, ignoreCase = true)) {
                         reported += pattern
                         signals += DetectionSignal(
@@ -110,49 +110,5 @@ class CloneAnalyzer(
             }
         } catch (_: Exception) {}
         return signals
-    }
-
-    private companion object {
-        val KNOWN_CLONE_PACKAGES = listOf(
-            "com.lbe.parallel.intl",
-            "com.excelliance.dualaid",
-            "com.parallel.space.lite",
-            "com.parallel.space.pro",
-            "cn.parallel.space.lite",
-            "com.mobiwia.dualspace",
-            "com.slspace.dualspace",
-            "com.buk.android.cloneapp",
-            "com.phonemaster.speed",
-            "com.dualspace.multiaccount",
-            "com.multi.clone.space",
-            "com.twofaces.multiaccounts",
-            "com.fancyclone.app",
-            "com.dual.sim.space",
-            "me.weishu.exp",
-            "io.va.exposed",
-            "com.qihoo.appstore.virtualapp.stub",
-            "com.virtual.box",
-            "com.ludashi.superboost",
-            "com.dual.account.multispace",
-            "com.polestar.domultiple",
-            "com.flyingaway.vphone",
-            "com.lody.virtual",
-            "com.glow.android.secure.space",
-        )
-
-        val CLONE_ARTIFACT_PATHS = listOf(
-            "/data/data/com.lbe.parallel.intl",
-            "/data/data/io.va.exposed",
-            "/data/data/me.weishu.exp",
-            "/data/data/com.lody.virtual",
-        )
-
-        val CLONE_MAP_PATTERNS = mapOf(
-            "com.lbe.parallel" to "Parallel Space native library",
-            "io.va"            to "VirtualApp (io.va) native library",
-            "com.lody.virtual" to "VirtualApp (lody) native library",
-            "me.weishu"        to "VirtualXposed native library",
-            "dual.space"       to "Dual Space native library",
-        )
     }
 }

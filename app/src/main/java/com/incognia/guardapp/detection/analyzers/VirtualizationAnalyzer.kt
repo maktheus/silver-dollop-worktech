@@ -2,6 +2,7 @@ package com.incognia.guardapp.detection.analyzers
 
 import android.content.Context
 import com.incognia.guardapp.detection.DetectionSignal
+import com.incognia.guardapp.detection.DetectionSignatures
 import com.incognia.guardapp.detection.EnvironmentAnalyzer
 import com.incognia.guardapp.detection.Severity
 import com.incognia.guardapp.detection.SignalCategory
@@ -34,7 +35,7 @@ class VirtualizationAnalyzer : EnvironmentAnalyzer {
     // ── File artifacts ────────────────────────────────────────────────────────
 
     private fun checkHookFiles(): List<DetectionSignal> =
-        HOOK_PATHS.filter { File(it).exists() }.map { path ->
+        DetectionSignatures.HOOK_PATHS.filter { File(it).exists() }.map { path ->
             DetectionSignal(
                 SignalCategory.VIRTUALIZATION,
                 "Hook/virtualization file found: $path",
@@ -49,7 +50,7 @@ class VirtualizationAnalyzer : EnvironmentAnalyzer {
         val reported = mutableSetOf<String>()
         try {
             File("/proc/self/maps").forEachLine { line ->
-                MAP_PATTERNS.forEach { (pattern, label) ->
+                DetectionSignatures.HOOK_MAP_PATTERNS.forEach { (pattern, label) ->
                     if (pattern !in reported && line.contains(pattern, ignoreCase = true)) {
                         reported += pattern
                         signals += DetectionSignal(
@@ -68,7 +69,7 @@ class VirtualizationAnalyzer : EnvironmentAnalyzer {
 
     private fun checkXposedClassLoader(): List<DetectionSignal> {
         val signals = mutableListOf<DetectionSignal>()
-        XPOSED_CLASS_NAMES.forEach { className ->
+        DetectionSignatures.XPOSED_CLASS_NAMES.forEach { className ->
             try {
                 Class.forName(className)
                 signals += DetectionSignal(
@@ -162,37 +163,9 @@ class VirtualizationAnalyzer : EnvironmentAnalyzer {
     }
 
     private companion object {
+        // Behavioral constants — timeouts and port numbers belong here,
+        // not in DetectionSignatures (which holds threat-intelligence data).
         const val FRIDA_PORT = 27042
         const val SOCKET_TIMEOUT_MS = 150
-
-        val HOOK_PATHS = listOf(
-            "/system/framework/XposedBridge.jar",
-            "/system/lib/libxposed_art.so",
-            "/system/lib64/libxposed_art.so",
-            "/data/data/de.robv.android.xposed.installer",
-            "/data/data/io.github.lsposed.manager",   // LSPosed
-            "/data/adb/lspd",                          // LSPosed daemon
-            "/data/local/tmp/frida-server",
-            "/data/local/tmp/re.frida.server",
-            "/data/local/frida-server",
-            "/system/lib/libsubstrate.so",             // Cydia Substrate
-            "/system/lib64/libsubstrate.so",
-            "/system/lib/libsubstratevm.so",
-            "/sbin/.magisk",                           // Magisk
-            "/sbin/.core/mirror",
-        )
-
-        val MAP_PATTERNS = mapOf(
-            "frida"       to "Frida instrumentation framework",
-            "xposed"      to "Xposed framework",
-            "substrate"   to "Cydia Substrate",
-            "va.hook"     to "VirtualApp hook layer",
-            "virtualapp"  to "VirtualApp framework",
-        )
-
-        val XPOSED_CLASS_NAMES = listOf(
-            "de.robv.android.xposed.XposedBridge",
-            "de.robv.android.xposed.XposedHelpers",
-        )
     }
 }

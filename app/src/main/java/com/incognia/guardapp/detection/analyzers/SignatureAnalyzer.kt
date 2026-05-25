@@ -5,6 +5,7 @@ import android.content.pm.PackageManager
 import android.content.pm.Signature
 import android.os.Build
 import com.incognia.guardapp.detection.DetectionSignal
+import com.incognia.guardapp.detection.DetectionSignatures
 import com.incognia.guardapp.detection.EnvironmentAnalyzer
 import com.incognia.guardapp.detection.Severity
 import com.incognia.guardapp.detection.SignalCategory
@@ -100,7 +101,7 @@ class SignatureAnalyzer : EnvironmentAnalyzer {
                 Severity.LOW,
             )
 
-            if (installer != null && installer !in LEGITIMATE_INSTALLERS) {
+            if (installer != null && installer !in DetectionSignatures.LEGITIMATE_INSTALLERS) {
                 signals += DetectionSignal(
                     SignalCategory.SIGNATURE,
                     "Unexpected install source: $installer (not a known app store)",
@@ -150,17 +151,17 @@ class SignatureAnalyzer : EnvironmentAnalyzer {
 
     private companion object {
         /**
-         * Set this to the SHA-256 of your production release certificate.
-         * Leave empty to skip the integrity check (debug/demo mode).
+         * SHA-256 of the signing certificate expected for THIS build.
+         *
+         * Current value: Android debug keystore (androiddebugkey).
+         * For production, replace with the SHA-256 of your release certificate:
+         *   apksigner verify --print-certs app-release.apk | grep SHA-256
+         *
+         * To update for a new keystore:
+         *   keytool -list -v -keystore <path>.jks -alias <alias> | grep SHA256
+         *   → remove colons, keep uppercase
          */
-        const val EXPECTED_CERT_SHA256 = ""
-
-        val LEGITIMATE_INSTALLERS = setOf(
-            "com.android.vending",                  // Google Play
-            "com.amazon.venezia",                   // Amazon Appstore
-            "com.sec.android.app.samsungapps",      // Samsung Galaxy Store
-            "com.huawei.appmarket",                 // Huawei AppGallery
-            "com.xiaomi.market",                    // Xiaomi GetApps
-        )
+        const val EXPECTED_CERT_SHA256 =
+            "DE8964584DE8F5DEB08D65041FE22B85299069C8B44635AC869D00C0DF4BB8C2"
     }
 }

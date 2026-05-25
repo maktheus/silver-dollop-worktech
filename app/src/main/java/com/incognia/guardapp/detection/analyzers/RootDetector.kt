@@ -2,6 +2,7 @@ package com.incognia.guardapp.detection.analyzers
 
 import android.content.Context
 import com.incognia.guardapp.detection.DetectionSignal
+import com.incognia.guardapp.detection.DetectionSignatures
 import com.incognia.guardapp.detection.EnvironmentAnalyzer
 import com.incognia.guardapp.detection.Severity
 import com.incognia.guardapp.detection.SignalCategory
@@ -33,14 +34,14 @@ class RootDetector(
     // ── 1. su binaries ────────────────────────────────────────────────────────
 
     internal fun checkSuBinaries(): List<DetectionSignal> =
-        SU_PATHS.filter { fileProbe(it) }.map { path ->
+        DetectionSignatures.SU_PATHS.filter { fileProbe(it) }.map { path ->
             DetectionSignal(SignalCategory.ROOT, "Root binary found: $path", Severity.HIGH)
         }
 
     // ── 2. Root management apps ───────────────────────────────────────────────
 
     private fun checkRootManagementApps(context: Context): List<DetectionSignal> =
-        ROOT_PACKAGES.mapNotNull { pkg ->
+        DetectionSignatures.ROOT_PACKAGES.mapNotNull { pkg ->
             if (packageChecker(context, pkg)) {
                 DetectionSignal(SignalCategory.ROOT, "Root management app installed: $pkg", Severity.HIGH)
             } else null
@@ -53,7 +54,7 @@ class RootDetector(
         try {
             val clazz = Class.forName("android.os.SystemProperties")
             val get = clazz.getMethod("get", String::class.java, String::class.java)
-            ROOT_PROP_CHECKS.forEach { (prop, badValues) ->
+            DetectionSignatures.ROOT_PROP_CHECKS.forEach { (prop, badValues) ->
                 val value = (get.invoke(null, prop, "") as? String)?.lowercase().orEmpty()
                 if (value.isNotEmpty() && badValues.any { value.contains(it) }) {
                     signals += DetectionSignal(
@@ -70,54 +71,11 @@ class RootDetector(
     // ── 4. Writable system partitions ─────────────────────────────────────────
 
     internal fun checkWritableSystemPaths(): List<DetectionSignal> =
-        SYSTEM_PATHS.filter { writableProbe(it) }.map { path ->
+        DetectionSignatures.WRITABLE_SYSTEM_PATHS.filter { writableProbe(it) }.map { path ->
             DetectionSignal(
                 SignalCategory.ROOT,
                 "System path is writable — indicates root mount: $path",
                 Severity.HIGH,
             )
         }
-
-    private companion object {
-        val SU_PATHS = listOf(
-            "/system/bin/su",
-            "/system/xbin/su",
-            "/sbin/su",
-            "/su/bin/su",
-            "/data/local/su",
-            "/data/local/xbin/su",
-            "/data/local/tmp/su",
-            "/system/sd/xbin/su",
-            "/system/bin/failsafe/su",
-        )
-
-        val ROOT_PACKAGES = listOf(
-            "com.topjohnwu.magisk",
-            "eu.chainfire.supersu",
-            "com.koushikdutta.superuser",
-            "com.noshufou.android.su",
-            "com.noshufou.android.su.elite",
-            "com.thirdparty.superuser",
-            "com.yellowes.su",
-            "com.kingroot.kinguser",
-            "com.kingo.root",
-            "com.smedialink.oneclickroot",
-            "com.zhiqupk.root.global",
-            "com.alephzain.framaroot",
-        )
-
-        val ROOT_PROP_CHECKS = mapOf(
-            "ro.debuggable"  to listOf("1"),
-            "ro.secure"      to listOf("0"),
-            "ro.build.type"  to listOf("eng", "userdebug"),
-        )
-
-        val SYSTEM_PATHS = listOf(
-            "/system",
-            "/system/bin",
-            "/system/xbin",
-            "/vendor/bin",
-            "/sbin",
-        )
-    }
 }
