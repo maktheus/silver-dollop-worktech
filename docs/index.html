@@ -3,1234 +3,1236 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GuardApp — SDK de Detecção de Ambiente Android</title>
+<title>GuardApp — SDK de Detecção Android</title>
 <style>
-  :root {
-    --bg: #0d1117;
-    --surface: #161b22;
-    --surface2: #1f2937;
-    --border: #30363d;
-    --text: #e6edf3;
-    --muted: #8b949e;
-    --green: #3fb950;
-    --red: #f85149;
-    --yellow: #d29922;
-    --blue: #58a6ff;
-    --purple: #bc8cff;
-    --orange: #ffa657;
-    --cyan: #39d353;
-    --accent: #238636;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  html { scroll-behavior: smooth; }
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Segoe UI', system-ui, sans-serif;
-    line-height: 1.6;
-    overflow-x: hidden;
-  }
+:root {
+  --bg:#0a0e17; --surf:#111827; --surf2:#1f2937; --surf3:#243044;
+  --border:#2d3748; --text:#e2e8f0; --muted:#64748b; --muted2:#94a3b8;
+  --green:#10b981; --red:#ef4444; --yellow:#f59e0b;
+  --blue:#3b82f6; --purple:#8b5cf6; --orange:#f97316; --cyan:#06b6d4;
+  --pink:#ec4899;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;line-height:1.65;overflow-x:hidden}
 
-  /* ── NAV ── */
-  nav {
-    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-    background: rgba(13,17,23,0.95);
-    backdrop-filter: blur(8px);
-    border-bottom: 1px solid var(--border);
-    padding: 0 24px;
-    height: 56px;
-    display: flex; align-items: center; gap: 8px;
-    overflow-x: auto;
-  }
-  nav a {
-    color: var(--muted); text-decoration: none; font-size: 13px;
-    white-space: nowrap; padding: 6px 10px; border-radius: 6px;
-    transition: all .2s;
-  }
-  nav a:hover { color: var(--text); background: var(--surface2); }
-  nav a.active { color: var(--blue); }
+/* ── PROGRESS ── */
+#prog{position:fixed;top:0;left:0;height:3px;z-index:999;background:linear-gradient(90deg,var(--blue),var(--purple),var(--cyan));width:0;transition:width .1s}
 
-  /* ── HERO ── */
-  .hero {
-    min-height: 100vh;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    text-align: center; padding: 80px 24px 40px;
-    position: relative; overflow: hidden;
-  }
-  .hero-grid {
-    position: absolute; inset: 0;
-    background-image:
-      linear-gradient(rgba(88,166,255,.05) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(88,166,255,.05) 1px, transparent 1px);
-    background-size: 40px 40px;
-    animation: gridDrift 20s linear infinite;
-  }
-  @keyframes gridDrift { from{transform:translateY(0)} to{transform:translateY(40px)} }
+/* ── NAV ── */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(10,14,23,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);height:52px;display:flex;align-items:center;padding:0 20px;gap:4px;overflow-x:auto}
+nav a{color:var(--muted2);text-decoration:none;font-size:12px;font-weight:500;padding:5px 10px;border-radius:6px;white-space:nowrap;transition:.2s}
+nav a:hover,nav a.on{color:var(--text);background:var(--surf2)}
+nav a.on{color:var(--cyan)}
 
-  .hero h1 {
-    font-size: clamp(2.4rem,6vw,4.5rem); font-weight: 800;
-    background: linear-gradient(135deg, var(--blue), var(--purple), var(--cyan));
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-    position: relative; z-index:1;
-  }
-  .hero p {
-    max-width: 600px; color: var(--muted); font-size: 1.1rem;
-    margin: 16px auto 0; position: relative; z-index:1;
-  }
-  .hero-badges {
-    display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;
-    margin-top: 24px; position: relative; z-index:1;
-  }
-  .badge {
-    padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;
-    border: 1px solid;
-  }
-  .badge-green  { color: var(--green);  border-color: var(--green);  background: rgba(63,185,80,.1); }
-  .badge-blue   { color: var(--blue);   border-color: var(--blue);   background: rgba(88,166,255,.1); }
-  .badge-purple { color: var(--purple); border-color: var(--purple); background: rgba(188,140,255,.1); }
-  .badge-orange { color: var(--orange); border-color: var(--orange); background: rgba(255,166,87,.1); }
+/* ── HERO ── */
+.hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:72px 24px 48px;position:relative;overflow:hidden}
+#heroCanvas{position:absolute;inset:0;opacity:.4}
+.hero-content{position:relative;z-index:1}
+.hero h1{font-size:clamp(2.8rem,7vw,5rem);font-weight:900;letter-spacing:-2px;background:linear-gradient(135deg,#60a5fa,#a78bfa,#34d399);-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1.1}
+.hero-sub{color:var(--muted2);font-size:1.1rem;max-width:580px;margin:18px auto 0}
+.hero-pills{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:28px}
+.pill{padding:5px 14px;border-radius:20px;font-size:12px;font-weight:600;border:1px solid}
+.p-g{color:var(--green);border-color:var(--green);background:rgba(16,185,129,.1)}
+.p-b{color:var(--blue);border-color:var(--blue);background:rgba(59,130,246,.1)}
+.p-p{color:var(--purple);border-color:var(--purple);background:rgba(139,92,246,.1)}
+.p-o{color:var(--orange);border-color:var(--orange);background:rgba(249,115,22,.1)}
+.p-c{color:var(--cyan);border-color:var(--cyan);background:rgba(6,182,212,.1)}
+.p-r{color:var(--red);border-color:var(--red);background:rgba(239,68,68,.1)}
 
-  /* ── SECTIONS ── */
-  section {
-    max-width: 900px; margin: 0 auto; padding: 80px 24px;
-    scroll-margin-top: 56px;
-  }
-  section h2 {
-    font-size: 1.8rem; font-weight: 700; margin-bottom: 8px;
-    display: flex; align-items: center; gap: 12px;
-  }
-  section h2 .icon { font-size: 1.4rem; }
-  .section-sub { color: var(--muted); margin-bottom: 40px; font-size: .95rem; }
-  hr.divider {
-    border: none; border-top: 1px solid var(--border); margin: 0 auto;
-    max-width: 900px;
-  }
+/* ── SECTIONS ── */
+section{max-width:960px;margin:0 auto;padding:88px 24px;scroll-margin-top:52px}
+.sec-title{font-size:1.9rem;font-weight:800;margin-bottom:6px;display:flex;align-items:center;gap:12px}
+.sec-sub{color:var(--muted2);margin-bottom:44px;font-size:.95rem;max-width:640px}
+hr.div{border:none;border-top:1px solid var(--border);max-width:960px;margin:0 auto}
 
-  /* ── CARDS ── */
-  .card {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 12px; padding: 24px; margin-bottom: 16px;
-    transition: border-color .2s, transform .2s;
-  }
-  .card:hover { border-color: var(--blue); transform: translateY(-2px); }
-  .card h3 { font-size: 1rem; font-weight: 700; margin-bottom: 8px; }
-  .card p  { font-size: .9rem; color: var(--muted); }
-  .card-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(260px,1fr)); gap: 16px; }
+/* ── CARDS ── */
+.grid{display:grid;gap:16px}
+.g2{grid-template-columns:repeat(auto-fill,minmax(280px,1fr))}
+.g3{grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}
+.card{background:var(--surf);border:1px solid var(--border);border-radius:12px;padding:20px;transition:.25s}
+.card:hover{transform:translateY(-3px);border-color:var(--blue)}
+.card h3{font-size:.95rem;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.card p{font-size:.85rem;color:var(--muted2);line-height:1.6}
 
-  /* ── CODE ── */
-  pre {
-    background: var(--surface2); border: 1px solid var(--border);
-    border-radius: 8px; padding: 16px; overflow-x: auto;
-    font-family: 'Cascadia Code','Fira Code','Consolas',monospace;
-    font-size: .82rem; line-height: 1.7; margin: 16px 0;
-  }
-  .kw { color: var(--purple); }
-  .fn { color: var(--blue); }
-  .st { color: var(--orange); }
-  .cm { color: var(--muted); font-style: italic; }
-  .nu { color: var(--green); }
-  .ty { color: var(--cyan); }
-  .hl { background: rgba(88,166,255,.15); display:block; margin:0 -16px; padding:0 16px; }
+/* ── CODE ── */
+pre{background:var(--surf2);border:1px solid var(--border);border-radius:10px;padding:18px;overflow-x:auto;font-family:'Cascadia Code','Fira Code','Consolas',monospace;font-size:.8rem;line-height:1.75;margin:14px 0;position:relative}
+.kw{color:#c084fc}.fn{color:#60a5fa}.st{color:#fb923c}.cm{color:#475569;font-style:italic}
+.nu{color:#34d399}.ty{color:#67e8f9}.hl{background:rgba(59,130,246,.12);display:block;margin:0 -18px;padding:0 18px;border-left:3px solid var(--blue)}
+.copy-btn{position:absolute;top:10px;right:10px;background:var(--surf3);border:1px solid var(--border);color:var(--muted2);padding:3px 10px;border-radius:5px;font-size:.7rem;cursor:pointer;transition:.2s}
+.copy-btn:hover{color:var(--text);border-color:var(--blue)}
 
-  /* ── CLASSPATH ANIMATION ── */
-  .cp-demo {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 12px; padding: 24px; overflow: hidden;
-  }
-  .cp-shelves {
-    display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 24px;
-  }
-  .shelf {
-    background: var(--surface2); border: 1px solid var(--border);
-    border-radius: 8px; padding: 12px 16px; flex: 1; min-width: 160px;
-  }
-  .shelf-label { font-size: .75rem; color: var(--muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing:.5px; }
-  .shelf-item {
-    font-size: .78rem; padding: 3px 8px; border-radius: 4px;
-    margin: 3px 0; cursor: pointer; transition: all .2s;
-    background: var(--bg); border: 1px solid var(--border); color: var(--text);
-  }
-  .shelf-item:hover { border-color: var(--blue); color: var(--blue); }
-  .shelf-item.found { background: rgba(63,185,80,.2); border-color: var(--green); color: var(--green); animation: pulse .4s; }
-  .shelf-item.not-found { background: rgba(248,81,73,.1); border-color: var(--red); color: var(--red); }
-  @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.05)} }
-  .cp-search {
-    display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
-  }
-  .cp-input {
-    background: var(--bg); border: 1px solid var(--border); color: var(--text);
-    padding: 8px 12px; border-radius: 6px; font-size: .85rem; flex: 1; min-width: 200px;
-    outline: none;
-  }
-  .cp-input:focus { border-color: var(--blue); }
-  .cp-btn {
-    background: var(--blue); color: #000; border: none; padding: 8px 16px;
-    border-radius: 6px; cursor: pointer; font-weight: 600; font-size: .85rem;
-    transition: opacity .2s;
-  }
-  .cp-btn:hover { opacity: .85; }
-  .cp-result {
-    margin-top: 12px; padding: 10px 14px; border-radius: 6px;
-    font-size: .85rem; display: none;
-  }
-  .cp-result.ok  { background: rgba(63,185,80,.15); border: 1px solid var(--green); color: var(--green); }
-  .cp-result.err { background: rgba(248,81,73,.1);  border: 1px solid var(--red);  color: var(--red); }
-  .cp-result.vis { display: block; animation: fadeIn .3s; }
-  @keyframes fadeIn { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:translateY(0)} }
+/* ── ACCORDION ── */
+.acc{background:var(--surf);border:1px solid var(--border);border-radius:12px;margin-bottom:12px;overflow:hidden;transition:border-color .2s}
+.acc:hover{border-color:var(--blue)}
+.acc-head{display:flex;align-items:center;gap:12px;padding:16px 20px;cursor:pointer;user-select:none;background:var(--surf2)}
+.acc-head .meta{font-size:.72rem;color:var(--muted);font-family:monospace}
+.acc-head h3{font-size:.95rem;font-weight:700;flex:1}
+.acc-head .ch{color:var(--muted);transition:transform .3s;font-size:.85rem}
+.acc.open .ch{transform:rotate(180deg)}
+.acc-body{max-height:0;overflow:hidden;transition:max-height .45s cubic-bezier(.4,0,.2,1)}
+.acc.open .acc-body{max-height:4000px}
+.acc-inner{padding:22px}
 
-  /* ── ARCH DIAGRAM ── */
-  .arch {
-    display: flex; flex-direction: column; align-items: center; gap: 0;
-  }
-  .arch-box {
-    background: var(--surface2); border: 2px solid var(--border);
-    border-radius: 10px; padding: 12px 20px; text-align: center;
-    font-size: .85rem; font-weight: 600; min-width: 180px;
-    position: relative; transition: all .25s; cursor: default;
-  }
-  .arch-box:hover { transform: scale(1.04); }
-  .arch-box.guard  { border-color: var(--blue);   color: var(--blue); }
-  .arch-box.report { border-color: var(--green);  color: var(--green); }
-  .arch-box.iface  { border-color: var(--purple); color: var(--purple); }
-  .arch-arrow {
-    width: 2px; height: 28px;
-    background: linear-gradient(to bottom, var(--border), var(--blue));
-    position: relative;
-  }
-  .arch-arrow::after {
-    content: '▼'; position: absolute; bottom: -10px; left: 50%;
-    transform: translateX(-50%); color: var(--blue); font-size: 10px;
-  }
-  .arch-row { display: flex; gap: 16px; align-items: stretch; }
-  .arch-analyzer {
-    background: var(--surface2); border: 1px solid var(--border);
-    border-radius: 8px; padding: 10px 14px;
-    font-size: .78rem; flex: 1; text-align: center;
-    transition: all .25s; cursor: pointer;
-  }
-  .arch-analyzer:hover { border-color: var(--orange); color: var(--orange); transform: translateY(-3px); }
-  .arch-analyzer .icon { font-size: 1.3rem; display: block; margin-bottom: 4px; }
+/* ── ANIMATIONS ── */
+.fade-up{opacity:0;transform:translateY(24px);transition:opacity .5s,transform .5s}
+.fade-up.vis{opacity:1;transform:translateY(0)}
 
-  /* ── THREAT CARDS ── */
-  .threat-card {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 12px; overflow: hidden; margin-bottom: 20px;
-    transition: border-color .2s;
-  }
-  .threat-card:hover { border-color: var(--red); }
-  .threat-header {
-    display: flex; align-items: center; gap: 12px;
-    padding: 16px 20px; cursor: pointer;
-    background: var(--surface2);
-    user-select: none;
-  }
-  .threat-header .icon { font-size: 1.4rem; }
-  .threat-header h3 { font-size: 1rem; font-weight: 700; flex: 1; }
-  .threat-header .chevron { color: var(--muted); transition: transform .3s; font-size: .9rem; }
-  .threat-card.open .chevron { transform: rotate(180deg); }
-  .threat-body { max-height: 0; overflow: hidden; transition: max-height .4s ease; }
-  .threat-card.open .threat-body { max-height: 2000px; }
-  .threat-inner { padding: 20px; }
+/* ── CLASSPATH DEMO ── */
+.cp-wrap{background:var(--surf);border:1px solid var(--border);border-radius:12px;padding:24px}
+.cp-shelves{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:20px}
+.shelf{background:var(--surf2);border:1px solid var(--border);border-radius:8px;padding:12px}
+.shelf-lbl{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.book{font-size:.75rem;padding:4px 8px;border-radius:4px;margin:3px 0;border:1px solid var(--border);background:var(--bg);cursor:pointer;transition:.2s;color:var(--text)}
+.book:hover{border-color:var(--blue);color:var(--blue)}
+.book.hit{background:rgba(16,185,129,.15);border-color:var(--green);color:var(--green);animation:bumpIn .35s}
+.book.miss{background:rgba(239,68,68,.1);border-color:var(--red);color:var(--red)}
+.book.xposed{border-color:var(--red);color:var(--red)}
+@keyframes bumpIn{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+.cp-bar{display:flex;gap:8px;flex-wrap:wrap}
+.cp-in{flex:1;min-width:200px;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:7px;font-size:.85rem;outline:none}
+.cp-in:focus{border-color:var(--blue)}
+.cp-btn{background:var(--blue);color:#fff;border:none;padding:8px 16px;border-radius:7px;cursor:pointer;font-weight:600;font-size:.85rem;transition:.2s}
+.cp-btn:hover{opacity:.85}
+.cp-result{margin-top:12px;padding:10px 14px;border-radius:7px;font-size:.85rem;display:none;animation:fadeIn .3s}
+.cp-ok{display:block;background:rgba(16,185,129,.12);border:1px solid var(--green);color:var(--green)}
+.cp-err{display:block;background:rgba(239,68,68,.08);border:1px solid var(--red);color:var(--red)}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
 
-  /* ── FLOW ANIMATION ── */
-  .flow {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 12px; padding: 24px; position: relative; overflow: hidden;
-  }
-  .flow-steps {
-    display: flex; flex-direction: column; gap: 0;
-    position: relative;
-  }
-  .flow-step {
-    display: flex; align-items: flex-start; gap: 16px;
-    padding: 16px 0; opacity: 0; transform: translateX(-16px);
-    transition: all .4s;
-  }
-  .flow-step.visible { opacity: 1; transform: translateX(0); }
-  .flow-num {
-    width: 32px; height: 32px; border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: .8rem; font-weight: 700; flex-shrink: 0;
-    background: var(--surface2); border: 2px solid var(--blue); color: var(--blue);
-  }
-  .flow-content h4 { font-size: .9rem; font-weight: 700; }
-  .flow-content p  { font-size: .82rem; color: var(--muted); margin-top: 4px; }
-  .flow-connector { width: 2px; height: 20px; background: var(--border); margin-left: 15px; }
+/* ── COROUTINE DIAGRAM ── */
+.coro-wrap{background:var(--surf);border:1px solid var(--border);border-radius:12px;padding:24px}
+.coro-lanes{display:flex;flex-direction:column;gap:8px;margin-bottom:16px}
+.lane{display:flex;align-items:center;gap:10px;height:36px}
+.lane-lbl{font-size:.78rem;color:var(--muted2);min-width:140px;text-align:right}
+.lane-track{flex:1;background:var(--bg);border-radius:4px;height:14px;position:relative;overflow:hidden;border:1px solid var(--border)}
+.lane-fill{height:100%;border-radius:4px;width:0;transition:width 0s}
+.lane-fill.run{transition:width 2s linear}
+.lane-result{font-size:.72rem;color:var(--muted);min-width:80px;opacity:0;transition:opacity .4s}
+.lane-result.show{opacity:1}
+.coro-btn{background:var(--green);color:#000;border:none;padding:8px 18px;border-radius:7px;cursor:pointer;font-weight:700;font-size:.85rem;transition:.2s}
+.coro-btn:hover{opacity:.85}
+.coro-status{margin-top:12px;font-size:.85rem;color:var(--muted2)}
 
-  /* ── CLASS DETAIL ── */
-  .class-detail {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 12px; margin-bottom: 16px; overflow: hidden;
-  }
-  .class-header {
-    display: flex; align-items: center; gap: 12px;
-    padding: 16px 20px; background: var(--surface2);
-    cursor: pointer; user-select: none;
-  }
-  .class-header .file { font-size: .75rem; color: var(--muted); font-family: monospace; }
-  .class-header h3 { font-size: 1rem; font-weight: 700; flex: 1; }
-  .class-body { max-height: 0; overflow: hidden; transition: max-height .4s ease; }
-  .class-detail.open .class-body { max-height: 3000px; }
-  .class-inner { padding: 20px; }
-  .class-detail.open .chevron { transform: rotate(180deg); }
+/* ── TCP TABLE ── */
+.tcp-wrap{overflow-x:auto;margin:14px 0}
+.tcp-tbl{width:100%;border-collapse:collapse;font-family:monospace;font-size:.78rem}
+.tcp-tbl th{background:var(--surf2);padding:7px 12px;border:1px solid var(--border);color:var(--muted2);text-align:left;font-size:.7rem;text-transform:uppercase}
+.tcp-tbl td{padding:6px 12px;border:1px solid var(--border);transition:background .4s}
+.tcp-tbl tr.flagged td{background:rgba(239,68,68,.12)}
+.tcp-tbl .port{color:var(--red);font-weight:700}
+.tcp-tbl .state{color:var(--orange)}
+.tcp-tbl .ok{color:var(--green)}
 
-  /* ── PILLS ── */
-  .pills { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0; }
-  .pill {
-    font-size: .75rem; padding: 3px 10px; border-radius: 20px;
-    background: var(--surface2); border: 1px solid var(--border); color: var(--muted);
-  }
-  .pill-red    { border-color: var(--red);    color: var(--red);    background: rgba(248,81,73,.1); }
-  .pill-green  { border-color: var(--green);  color: var(--green);  background: rgba(63,185,80,.1); }
-  .pill-blue   { border-color: var(--blue);   color: var(--blue);   background: rgba(88,166,255,.1); }
-  .pill-purple { border-color: var(--purple); color: var(--purple); background: rgba(188,140,255,.1); }
-  .pill-orange { border-color: var(--orange); color: var(--orange); background: rgba(255,166,87,.1); }
+/* ── RISK METER ── */
+.risk-wrap{background:var(--surf);border:1px solid var(--border);border-radius:12px;padding:22px}
+.risk-bar-wrap{height:22px;background:var(--bg);border-radius:11px;overflow:hidden;margin:10px 0;border:1px solid var(--border)}
+.risk-bar{height:100%;border-radius:11px;width:0;transition:width 1.4s cubic-bezier(.23,1,.32,1);background:linear-gradient(90deg,var(--green),var(--yellow),var(--red))}
+.risk-score-big{font-size:3rem;font-weight:900;color:var(--red);text-align:center;margin:8px 0}
 
-  /* ── SCROLLBAR ── */
-  ::-webkit-scrollbar { width: 8px; height: 8px; }
-  ::-webkit-scrollbar-track { background: var(--bg); }
-  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+/* ── FLOW STEPS ── */
+.flow-wrap{background:var(--surf);border:1px solid var(--border);border-radius:12px;padding:24px}
+.step{display:flex;gap:14px;padding:14px 0;opacity:0;transform:translateX(-16px);transition:.4s}
+.step.vis{opacity:1;transform:translateX(0)}
+.step-num{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700;flex-shrink:0;border:2px solid var(--blue);color:var(--blue);background:var(--bg)}
+.step-body h4{font-size:.9rem;font-weight:700}
+.step-body p{font-size:.8rem;color:var(--muted2);margin-top:3px}
+.step-conn{width:2px;height:18px;background:var(--border);margin-left:16px}
+.flow-btn{background:var(--purple);color:#fff;border:none;padding:8px 18px;border-radius:7px;cursor:pointer;font-weight:700;font-size:.85rem;margin-top:14px;transition:.2s}
+.flow-btn:hover{opacity:.85}
 
-  /* ── PROGRESS BAR ── */
-  .reading-progress {
-    position: fixed; top: 0; left: 0; height: 3px; z-index: 200;
-    background: linear-gradient(90deg, var(--blue), var(--purple));
-    width: 0%; transition: width .1s;
-  }
+/* ── THREAT CARDS ── */
+.threat{background:var(--surf);border:1px solid var(--border);border-radius:12px;margin-bottom:14px;overflow:hidden;transition:border-color .2s}
+.threat:hover{border-color:var(--red)}
+.threat-head{display:flex;align-items:center;gap:12px;padding:16px 20px;cursor:pointer;user-select:none;background:var(--surf2)}
+.threat-head h3{font-size:.95rem;font-weight:700;flex:1}
+.severity{padding:2px 10px;border-radius:12px;font-size:.72rem;font-weight:700}
+.sev-h{background:rgba(239,68,68,.15);color:var(--red)}
+.sev-m{background:rgba(245,158,11,.15);color:var(--yellow)}
+.threat-body{max-height:0;overflow:hidden;transition:max-height .4s ease}
+.threat.open .threat-body{max-height:3000px}
+.threat.open .ch{transform:rotate(180deg)}
+.threat-inner{padding:20px}
 
-  /* ── PACKET ANIMATION (Frida) ── */
-  .frida-demo {
-    background: var(--surface2); border-radius: 8px; padding: 16px;
-    margin: 12px 0; position: relative; overflow: hidden; height: 120px;
-  }
-  .frida-demo canvas { width: 100%; height: 100%; }
+/* ── ARCH ── */
+.arch-wrap{display:flex;flex-direction:column;align-items:center;gap:0}
+.arch-box{padding:12px 22px;border-radius:10px;border:2px solid;text-align:center;font-size:.85rem;font-weight:700;min-width:200px;transition:.25s;cursor:pointer}
+.arch-box:hover{transform:scale(1.04)}
+.arch-arr{width:2px;height:24px;background:linear-gradient(to bottom,var(--border),var(--blue));position:relative}
+.arch-arr::after{content:'▼';position:absolute;bottom:-10px;left:50%;transform:translateX(-50%);color:var(--blue);font-size:9px}
+.arch-row{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+.arch-ana{background:var(--surf2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:.78rem;text-align:center;transition:.25s;cursor:pointer;min-width:100px}
+.arch-ana:hover{border-color:var(--orange);color:var(--orange);transform:translateY(-3px)}
+.arch-ana span{display:block;font-size:1.2rem;margin-bottom:4px}
 
-  /* ── TCP TABLE ── */
-  .tcp-table {
-    width: 100%; border-collapse: collapse; font-size: .78rem;
-    font-family: monospace; margin: 12px 0;
-  }
-  .tcp-table th {
-    background: var(--surface2); padding: 6px 10px;
-    border: 1px solid var(--border); color: var(--muted); text-align: left;
-  }
-  .tcp-table td {
-    padding: 5px 10px; border: 1px solid var(--border);
-    transition: background .3s;
-  }
-  .tcp-table tr.highlight td { background: rgba(248,81,73,.15); }
-  .tcp-table .port-col { color: var(--red); font-weight: 700; }
-  .tcp-table .state-col { color: var(--orange); }
+/* ── BYTE DECODE ── */
+.decode-wrap{background:var(--surf2);border-radius:8px;padding:16px;font-family:monospace;font-size:.82rem}
+.byte{display:inline-block;padding:3px 6px;border-radius:4px;margin:2px;cursor:pointer;transition:.2s;border:1px solid transparent}
+.byte:hover{border-color:var(--blue)}
+.byte.active{background:rgba(59,130,246,.2);border-color:var(--blue);color:var(--blue)}
+.decode-result{margin-top:12px;padding:10px;background:var(--bg);border-radius:6px;font-size:.82rem;color:var(--cyan);border:1px solid var(--border);min-height:36px}
 
-  /* ── RISK METER ── */
-  .risk-meter {
-    background: var(--surface2); border-radius: 8px; padding: 20px; margin: 16px 0;
-  }
-  .risk-bar-wrap { height: 20px; background: var(--bg); border-radius: 10px; overflow: hidden; margin: 12px 0; }
-  .risk-bar {
-    height: 100%; border-radius: 10px; width: 0%;
-    transition: width 1.2s cubic-bezier(.23,1,.32,1);
-    background: linear-gradient(90deg, var(--green), var(--yellow), var(--red));
-  }
-  .risk-labels { display: flex; justify-content: space-between; font-size: .75rem; color: var(--muted); }
+/* ── STEALTH VIZ ── */
+.stealth-wrap{background:var(--surf2);border-radius:8px;padding:16px;margin:12px 0}
+.strings-scan{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:8px}
+.str-item{padding:4px 10px;border-radius:4px;font-family:monospace;font-size:.78rem;border:1px solid var(--border)}
+.str-found{background:rgba(239,68,68,.12);border-color:var(--red);color:var(--red)}
+.str-hidden{background:rgba(16,185,129,.12);border-color:var(--green);color:var(--green)}
+.str-obfus{background:rgba(100,116,139,.12);border-color:var(--muted);color:var(--muted)}
 
-  /* ── FOOTER ── */
-  footer {
-    text-align: center; padding: 40px 24px;
-    border-top: 1px solid var(--border); color: var(--muted); font-size: .85rem;
-  }
-  footer a { color: var(--blue); text-decoration: none; }
+/* ── UID DIAGRAM ── */
+.uid-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:16px 0}
+.uid-block{background:var(--surf2);border-radius:8px;padding:14px;border:2px solid var(--border)}
+.uid-block.primary{border-color:var(--green)}
+.uid-block.clone{border-color:var(--red)}
+.uid-range{font-family:monospace;font-size:.85rem;font-weight:700;margin-top:6px}
+
+/* ── FRIDA CANVAS ── */
+.frida-canvas-wrap{background:var(--surf2);border-radius:8px;overflow:hidden;margin:12px 0;height:160px;position:relative}
+#fridaCanvas{width:100%;height:100%}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:7px;height:7px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+
+footer{text-align:center;padding:48px 24px;border-top:1px solid var(--border);color:var(--muted);font-size:.85rem}
+footer a{color:var(--blue);text-decoration:none}
 </style>
 </head>
 <body>
 
-<div class="reading-progress" id="progress"></div>
+<div id="prog"></div>
 
 <nav>
-  <a href="#hero" class="active">Início</a>
-  <a href="#classpath">JVM Classpath</a>
-  <a href="#architecture">Arquitetura</a>
+  <a href="#hero" class="on">Início</a>
+  <a href="#jvm">JVM & Classpath</a>
+  <a href="#arch">Arquitetura</a>
   <a href="#classes">Classes</a>
+  <a href="#coroutines">Coroutines</a>
   <a href="#threats">Ameaças</a>
+  <a href="#frida">Frida</a>
+  <a href="#tcp">TCP Parser</a>
+  <a href="#stealth">Stealth</a>
   <a href="#flow">Fluxo</a>
 </nav>
 
-<!-- ═══════════════════════════════════ HERO ═══════════════════════════════════ -->
+<!-- ═══════════════ HERO ═══════════════ -->
 <div class="hero" id="hero">
-  <div class="hero-grid"></div>
-  <h1>GuardApp SDK</h1>
-  <p>Detecção de ambiente Android em tempo de execução — emuladores, root, clone apps, hooking frameworks e APKs repackageados.</p>
-  <div class="hero-badges">
-    <span class="badge badge-green">47 testes passando</span>
-    <span class="badge badge-blue">Kotlin 2.0 + Coroutines</span>
-    <span class="badge badge-purple">Android 15 (API 35)</span>
-    <span class="badge badge-orange">5 analyzers paralelos</span>
+  <canvas id="heroCanvas"></canvas>
+  <div class="hero-content fade-up">
+    <h1>GuardApp SDK</h1>
+    <p class="hero-sub">Detecção de ambiente Android em tempo de execução — emuladores, root, clone apps, hooking frameworks (Frida/Xposed) e APKs repackageados.</p>
+    <div class="hero-pills">
+      <span class="pill p-g">47 testes unitários</span>
+      <span class="pill p-b">Kotlin 2.0 + Coroutines</span>
+      <span class="pill p-p">Android 15 • API 35</span>
+      <span class="pill p-o">5 analyzers paralelos</span>
+      <span class="pill p-c">JVM testável sem device</span>
+      <span class="pill p-r">Stealth • Obfuscação</span>
+    </div>
   </div>
 </div>
+<hr class="div">
 
-<hr class="divider">
+<!-- ═══════════════ JVM CLASSPATH ═══════════════ -->
+<section id="jvm">
+  <h2 class="sec-title fade-up"><span>📚</span> JVM Classpath — Por que existe?</h2>
+  <p class="sec-sub fade-up">
+    A JVM não compila tudo de uma vez como C/C++. Ela carrega classes <strong>sob demanda, em runtime</strong>.
+    Para isso precisa saber onde procurá-las — essa lista de locais é o <strong>classpath</strong>.
+  </p>
 
-<!-- ═══════════════════════════════ CLASSPATH ═══════════════════════════════ -->
-<section id="classpath">
-  <h2><span class="icon">📚</span> JVM Classpath</h2>
-  <p class="section-sub">Por que a JVM precisa saber onde procurar classes — e como isso possibilita o Xposed</p>
-
-  <div class="cp-demo">
-    <div class="cp-shelves">
-      <div class="shelf">
-        <div class="shelf-label">Prateleira 1 — seu app</div>
-        <div class="shelf-item" data-class="com.incognia.guardapp.detection.EnvironmentGuard">EnvironmentGuard</div>
-        <div class="shelf-item" data-class="com.incognia.guardapp.detection.SecurityReport">SecurityReport</div>
-        <div class="shelf-item" data-class="com.incognia.guardapp.detection.DetectionSignal">DetectionSignal</div>
-      </div>
-      <div class="shelf">
-        <div class="shelf-label">Prateleira 2 — dependências</div>
-        <div class="shelf-item" data-class="kotlinx.coroutines.Deferred">kotlinx.coroutines.Deferred</div>
-        <div class="shelf-item" data-class="okhttp3.OkHttpClient">okhttp3.OkHttpClient</div>
-      </div>
-      <div class="shelf">
-        <div class="shelf-label">Prateleira 3 — Android SDK</div>
-        <div class="shelf-item" data-class="android.content.Context">android.content.Context</div>
-        <div class="shelf-item" data-class="android.os.Build">android.os.Build</div>
-      </div>
-      <div class="shelf" id="xposed-shelf" style="border-color:var(--red)">
-        <div class="shelf-label" style="color:var(--red)">Xposed injeta aqui ↓</div>
-        <div class="shelf-item" data-class="de.robv.android.xposed.XposedBridge" style="border-color:var(--red);color:var(--red)">XposedBridge</div>
-        <div class="shelf-item" data-class="de.robv.android.xposed.XposedHelpers" style="border-color:var(--red);color:var(--red)">XposedHelpers</div>
-      </div>
+  <div class="grid g2 fade-up" style="margin-bottom:24px">
+    <div class="card">
+      <h3>🏭 C/C++ — Tudo resolve na compilação</h3>
+      <p>O linker une todos os arquivos num único binário. Em runtime, não há busca — tudo já está lá.</p>
+      <pre style="margin-top:10px"><span class="cm"># Um binário, tudo dentro</span>
+gcc main.c utils.c -o programa
+./programa  <span class="cm"># sem busca em runtime</span></pre>
     </div>
-    <div class="cp-search">
-      <input class="cp-input" id="cpInput" placeholder="Digite um nome de classe para buscar..." value="de.robv.android.xposed.XposedBridge">
-      <button class="cp-btn" onclick="searchClass()">Buscar no Classpath</button>
+    <div class="card">
+      <h3>☕ Java/Kotlin — Carregamento lazy</h3>
+      <p>Cada classe é um arquivo separado. A JVM só carrega quando referenciada pela primeira vez.</p>
+      <pre style="margin-top:10px"><span class="cm"># Cada classe = arquivo próprio</span>
+EnvironmentGuard.class
+SecurityReport.class
+DetectionSignal.class  <span class="cm">← carregado quando usado</span></pre>
     </div>
-    <div class="cp-result" id="cpResult"></div>
   </div>
 
-  <pre>
-<span class="cm">// Sem Xposed — ClassNotFoundException esperada</span>
+  <div class="cp-wrap fade-up">
+    <div style="font-size:.85rem;font-weight:700;margin-bottom:14px">
+      🔍 Simulação: a JVM procura uma classe no classpath
+    </div>
+    <div class="cp-shelves" id="shelves">
+      <div class="shelf">
+        <div class="shelf-lbl">📦 Prateleira 1 — seu app</div>
+        <div class="book" data-cls="com.incognia.guardapp.detection.EnvironmentGuard" data-shelf="Prateleira 1">EnvironmentGuard</div>
+        <div class="book" data-cls="com.incognia.guardapp.detection.SecurityReport" data-shelf="Prateleira 1">SecurityReport</div>
+        <div class="book" data-cls="com.incognia.guardapp.detection.DetectionSignal" data-shelf="Prateleira 1">DetectionSignal</div>
+        <div class="book" data-cls="com.incognia.guardapp.detection.analyzers.RootDetector" data-shelf="Prateleira 1">RootDetector</div>
+      </div>
+      <div class="shelf">
+        <div class="shelf-lbl">📦 Prateleira 2 — dependências</div>
+        <div class="book" data-cls="kotlinx.coroutines.Deferred" data-shelf="Prateleira 2">coroutines.Deferred</div>
+        <div class="book" data-cls="kotlinx.coroutines.async" data-shelf="Prateleira 2">coroutines.async</div>
+        <div class="book" data-cls="io.mockk.MockK" data-shelf="Prateleira 2">MockK (tests)</div>
+      </div>
+      <div class="shelf">
+        <div class="shelf-lbl">📦 Prateleira 3 — Android SDK</div>
+        <div class="book" data-cls="android.content.Context" data-shelf="Prateleira 3">android.content.Context</div>
+        <div class="book" data-cls="android.os.Build" data-shelf="Prateleira 3">android.os.Build</div>
+        <div class="book" data-cls="android.content.pm.PackageManager" data-shelf="Prateleira 3">PackageManager</div>
+      </div>
+      <div class="shelf" style="border-color:var(--red)">
+        <div class="shelf-lbl" style="color:var(--red)">⚠️ Xposed injeta aqui</div>
+        <div class="book xposed" data-cls="de.robv.android.xposed.XposedBridge" data-shelf="Xposed (injetado!)">XposedBridge</div>
+        <div class="book xposed" data-cls="de.robv.android.xposed.XposedHelpers" data-shelf="Xposed (injetado!)">XposedHelpers</div>
+      </div>
+    </div>
+    <div class="cp-bar">
+      <input class="cp-in" id="cpIn" placeholder="Digite um nome de classe e pressione Enter…" value="de.robv.android.xposed.XposedBridge">
+      <button class="cp-btn" onclick="searchCp()">🔍 Buscar</button>
+    </div>
+    <div class="cp-result" id="cpRes"></div>
+  </div>
+
+  <div class="card fade-up" style="margin-top:20px;border-color:var(--purple)">
+    <h3>💡 Por que isso importa para detecção de Xposed</h3>
+    <p>Xposed injeta <code>XposedBridge.jar</code> no classpath de <strong>todo</strong> app no boot do Android.
+    Se a classe <code>XposedBridge</code> é encontrada com <code>Class.forName()</code>, o Xposed está ativo —
+    independente do nome do pacote ou de qualquer tentativa de ocultar.</p>
+    <pre style="margin-top:12px">
 <span class="kw">try</span> {
     <span class="ty">Class</span>.<span class="fn">forName</span>(<span class="st">"de.robv.android.xposed.XposedBridge"</span>)
-    <span class="cm">// se chegou aqui → Xposed está no classpath → ATIVO</span>
+    <span class="cm">// ↑ se chegou aqui = Xposed está no classpath → HIGH signal</span>
 } <span class="kw">catch</span> (_: <span class="ty">ClassNotFoundException</span>) {
-    <span class="cm">/* dispositivo limpo — esperado */</span>
-}
-
-<span class="cm">// A JVM busca lazy: só carrega a classe quando referenciada</span>
-<span class="cm">// Sem classpath a JVM não sabe onde estão os .class/.dex</span></pre>
-</section>
-<hr class="divider">
-
-<!-- ═══════════════════════════════ ARCHITECTURE ═══════════════════════════════ -->
-<section id="architecture">
-  <h2><span class="icon">🏗️</span> Arquitetura</h2>
-  <p class="section-sub">Como as peças se encaixam — do request até o relatório final</p>
-
-  <div class="arch">
-    <div class="arch-box guard">EnvironmentGuard<br><small style="font-weight:400;color:var(--muted)">Façade + Factory + Orquestrador</small></div>
-    <div class="arch-arrow"></div>
-    <div class="arch-box iface" style="border-color:var(--purple)">EnvironmentAnalyzer<br><small style="font-weight:400;color:var(--muted)">fun interface (SAM)</small></div>
-    <div class="arch-arrow"></div>
-    <div class="arch-row">
-      <div class="arch-analyzer" onclick="jumpToClass('emulator')">
-        <span class="icon">📱</span>Emulator<br>Analyzer
-      </div>
-      <div class="arch-analyzer" onclick="jumpToClass('root')">
-        <span class="icon">🔑</span>Root<br>Detector
-      </div>
-      <div class="arch-analyzer" onclick="jumpToClass('clone')">
-        <span class="icon">👥</span>Clone<br>Analyzer
-      </div>
-      <div class="arch-analyzer" onclick="jumpToClass('virt')">
-        <span class="icon">🪝</span>Virtualization<br>Analyzer
-      </div>
-      <div class="arch-analyzer" onclick="jumpToClass('sig')">
-        <span class="icon">✍️</span>Signature<br>Analyzer
-      </div>
-    </div>
-    <div class="arch-arrow"></div>
-    <div class="arch-box" style="border-color:var(--yellow); color:var(--yellow)">
-      DetectionSignal[ ]<br><small style="font-weight:400;color:var(--muted)">agregação plana</small>
-    </div>
-    <div class="arch-arrow"></div>
-    <div class="arch-box report">SecurityReport<br><small style="font-weight:400;color:var(--muted)">isTampered · riskScore · signals</small></div>
-  </div>
-
-  <div style="margin-top:24px">
-    <pre>
-<span class="cm">// Toda execução é paralela — async/awaitAll</span>
-<span class="kw">suspend fun</span> <span class="fn">generateReport</span>(): <span class="ty">SecurityReport</span> = <span class="fn">coroutineScope</span> {
-    <span class="kw">val</span> deferred = analyzers.<span class="fn">map</span> { analyzer ->
-        <span class="fn">async</span>(<span class="ty">Dispatchers</span>.Default) {
-            <span class="fn">runCatching</span> { analyzer.<span class="fn">analyze</span>(context) }.<span class="fn">getOrDefault</span>(<span class="fn">emptyList</span>())
-<span class="hl">        }  <span class="cm">// crash isolado: um analyzer caindo não derruba os outros</span></span>
-    }
-    <span class="ty">SecurityReport</span>(deferred.<span class="fn">awaitAll</span>().<span class="fn">flatten</span>())
+    <span class="cm">// ← esperado num dispositivo limpo</span>
 }</pre>
   </div>
 </section>
-<hr class="divider">
+<hr class="div">
 
-<!-- ═══════════════════════════════ CLASSES ═══════════════════════════════ -->
+<!-- ═══════════════ ARQUITETURA ═══════════════ -->
+<section id="arch">
+  <h2 class="sec-title fade-up"><span>🏗️</span> Arquitetura do SDK</h2>
+  <p class="sec-sub fade-up">Façade + Strategy + Factory Method. Cada camada tem uma responsabilidade única.</p>
+
+  <div class="arch-wrap fade-up" style="margin-bottom:32px">
+    <div class="arch-box" style="border-color:var(--blue);color:var(--blue)" onclick="goTo('classes')">
+      EnvironmentGuard<br><small style="font-weight:400;color:var(--muted2)">Façade + Factory + Orquestrador</small>
+    </div>
+    <div class="arch-arr"></div>
+    <div class="arch-box" style="border-color:var(--purple);color:var(--purple)">
+      EnvironmentAnalyzer<br><small style="font-weight:400;color:var(--muted2)">fun interface — contrato único</small>
+    </div>
+    <div class="arch-arr"></div>
+    <div class="arch-row">
+      <div class="arch-ana" onclick="goTo('threats')"><span>📱</span>Emulator<br>Analyzer</div>
+      <div class="arch-ana" onclick="goTo('threats')"><span>🔑</span>Root<br>Detector</div>
+      <div class="arch-ana" onclick="goTo('threats')"><span>👥</span>Clone<br>Analyzer</div>
+      <div class="arch-ana" onclick="goTo('frida')"><span>🪝</span>Virtualization<br>Analyzer</div>
+      <div class="arch-ana" onclick="goTo('threats')"><span>✍️</span>Signature<br>Analyzer</div>
+    </div>
+    <div class="arch-arr"></div>
+    <div class="arch-box" style="border-color:var(--yellow);color:var(--yellow)">
+      List&lt;DetectionSignal&gt;<br><small style="font-weight:400;color:var(--muted2)">flatten de todas as listas</small>
+    </div>
+    <div class="arch-arr"></div>
+    <div class="arch-box" style="border-color:var(--green);color:var(--green)">
+      SecurityReport<br><small style="font-weight:400;color:var(--muted2)">isTampered · riskScore · signals</small>
+    </div>
+  </div>
+
+  <div class="grid g2 fade-up">
+    <div class="card">
+      <h3>🎭 Façade Pattern</h3>
+      <p><code>EnvironmentGuard</code> esconde toda a complexidade. Do ponto de vista do chamador, é uma chamada só: <code>generateReport()</code>. Internamente orquestra 5 analyzers em paralelo, isola crashes e agrega resultados.</p>
+    </div>
+    <div class="card">
+      <h3>🔌 Strategy Pattern</h3>
+      <p>Cada analyzer implementa <code>EnvironmentAnalyzer</code>. Adicionar um novo detector = criar uma nova classe. Sem tocar em nada existente. Isso é o "O" do SOLID (Open/Closed Principle).</p>
+    </div>
+    <div class="card">
+      <h3>🏭 Factory Method</h3>
+      <p>Construtor <code>private</code>. Só o <code>companion object</code> instancia. Dois overloads: um para produção (lista hardcoded), outro para testes (lista injetada).</p>
+    </div>
+    <div class="card">
+      <h3>💉 Dependency Injection via Lambda</h3>
+      <p>Sem framework (sem Hilt/Koin). Dependências como <code>File.exists()</code> e <code>PackageManager</code> são lambdas no construtor. Substituíveis em testes sem Robolectric.</p>
+    </div>
+  </div>
+</section>
+<hr class="div">
+
+<!-- ═══════════════ CLASSES ═══════════════ -->
 <section id="classes">
-  <h2><span class="icon">📦</span> Cada Classe Explicada</h2>
-  <p class="section-sub">Clique para expandir detalhes, decisões de design e código anotado</p>
+  <h2 class="sec-title fade-up"><span>📦</span> Cada Classe Explicada</h2>
+  <p class="sec-sub fade-up">Decisões de design, por que cada escolha foi feita e o que acontece se você fizer diferente.</p>
 
   <!-- DetectionSignal -->
-  <div class="class-detail" id="class-signal">
-    <div class="class-header" onclick="toggleClass(this)">
-      <div>
-        <div class="file">detection/DetectionSignal.kt</div>
-        <h3>DetectionSignal · SignalCategory · Severity</h3>
-      </div>
-      <span class="chevron" style="transition:.3s">▼</span>
+  <div class="acc fade-up">
+    <div class="acc-head" onclick="tog(this)">
+      <div><div class="meta">detection/DetectionSignal.kt</div><h3>DetectionSignal · SignalCategory · Severity</h3></div>
+      <div class="ch">▼</div>
     </div>
-    <div class="class-body">
-      <div class="class-inner">
-        <div class="pills">
-          <span class="pill-green pill">data class</span>
-          <span class="pill-blue pill">imutável</span>
-          <span class="pill-purple pill">thread-safe</span>
-        </div>
-        <p style="color:var(--muted);font-size:.9rem;margin-bottom:16px">
-          O átomo do sistema. Cada evidência detectada vira um <code>DetectionSignal</code>.
-          Usa <code>data class</code> para equals/hashCode automáticos — os testes podem fazer <code>contains(signal)</code> sem boilerplate.
-          Imutável por design: os analyzers rodam em paralelo e não devem compartilhar estado mutável.
-        </p>
-        <pre>
+    <div class="acc-body"><div class="acc-inner">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+        <span class="pill p-g">data class</span>
+        <span class="pill p-b">imutável</span>
+        <span class="pill p-p">thread-safe</span>
+        <span class="pill p-c">equals/hashCode automáticos</span>
+      </div>
+      <p style="color:var(--muted2);font-size:.9rem;margin-bottom:16px">
+        O <strong>átomo</strong> de todo o sistema. Toda evidência detectada vira um <code>DetectionSignal</code>.
+        Usa <code>data class</code> porque os testes fazem <code>assertTrue(report.signals.contains(signal))</code> —
+        isso exige <code>equals</code> por valor, não por referência.<br><br>
+        <strong style="color:var(--orange)">Imutável por design:</strong> os 5 analyzers rodam em threads paralelas.
+        Se <code>DetectionSignal</code> fosse mutável, precisaríamos de sincronização. Imutabilidade elimina o problema.
+      </p>
+      <pre>
 <span class="kw">enum class</span> <span class="ty">SignalCategory</span>(<span class="kw">val</span> displayName: <span class="ty">String</span>) {
-    EMULATOR(<span class="st">"Emulator"</span>),
-    CLONE_APP(<span class="st">"Clone / Dual-Space App"</span>),
-    VIRTUALIZATION(<span class="st">"Virtualization / Hooking"</span>),
-    ROOT(<span class="st">"Root / Superuser"</span>),
-    SIGNATURE(<span class="st">"Signature / Integrity"</span>),
-    SUSPICIOUS_PATH(<span class="st">"Suspicious Path"</span>),
-    SYSTEM_PROPERTY(<span class="st">"Suspicious System Property"</span>),
+    EMULATOR(<span class="st">"Emulator"</span>),          <span class="cm">// AVD, Genymotion, Nox</span>
+    CLONE_APP(<span class="st">"Clone / Dual-Space"</span>), <span class="cm">// Parallel Space, VirtualApp</span>
+    VIRTUALIZATION(<span class="st">"Hooking"</span>),       <span class="cm">// Frida, Xposed, Substrate</span>
+    ROOT(<span class="st">"Root / Superuser"</span>),        <span class="cm">// Magisk, SuperSU</span>
+    SIGNATURE(<span class="st">"Integrity"</span>),           <span class="cm">// APK repackageado</span>
+    SUSPICIOUS_PATH(<span class="st">"Path"</span>),          <span class="cm">// arquivo de ferramenta</span>
+    SYSTEM_PROPERTY(<span class="st">"Sys Property"</span>),  <span class="cm">// ro.debuggable, ro.secure</span>
 }
-
 <span class="kw">enum class</span> <span class="ty">Severity</span> { LOW, MEDIUM, HIGH }
 
 <span class="kw">data class</span> <span class="ty">DetectionSignal</span>(
     <span class="kw">val</span> category:    <span class="ty">SignalCategory</span>,
-    <span class="kw">val</span> description: <span class="ty">String</span>,    <span class="cm">// evidência concreta</span>
+    <span class="kw">val</span> description: <span class="ty">String</span>,   <span class="cm">// evidência concreta legível</span>
     <span class="kw">val</span> severity:    <span class="ty">Severity</span>,
-    <span class="kw">val</span> explanation: <span class="ty">String</span> = <span class="st">""</span>  <span class="cm">// opcional, para UI</span>
+    <span class="kw">val</span> explanation: <span class="ty">String</span> = <span class="st">""</span>, <span class="cm">// contexto opcional para UI</span>
 )</pre>
-        <div class="risk-meter">
-          <div style="font-size:.85rem;font-weight:600;margin-bottom:8px">Peso de cada severidade no riskScore</div>
-          <div style="font-size:.8rem;color:var(--muted)">LOW → 0 pts</div>
-          <div class="risk-bar-wrap"><div class="risk-bar" id="lowBar" style="width:0%"></div></div>
-          <div style="font-size:.8rem;color:var(--muted)">MEDIUM → 1 pt</div>
-          <div class="risk-bar-wrap"><div class="risk-bar" id="medBar" style="width:0%"></div></div>
-          <div style="font-size:.8rem;color:var(--muted)">HIGH → 3 pts</div>
-          <div class="risk-bar-wrap"><div class="risk-bar" id="highBar" style="width:0%"></div></div>
-          <div class="risk-labels"><span>0</span><span>1</span><span>2</span><span>3</span></div>
-        </div>
+      <div class="risk-wrap" style="margin-top:16px">
+        <div style="font-weight:700;font-size:.88rem;margin-bottom:12px">Peso no riskScore — clique para animar</div>
+        <div style="font-size:.8rem;color:var(--muted2)">LOW → 0 pontos</div>
+        <div class="risk-bar-wrap"><div class="risk-bar" id="rLow"></div></div>
+        <div style="font-size:.8rem;color:var(--muted2)">MEDIUM → 1 ponto</div>
+        <div class="risk-bar-wrap"><div class="risk-bar" id="rMed"></div></div>
+        <div style="font-size:.8rem;color:var(--muted2)">HIGH → 3 pontos</div>
+        <div class="risk-bar-wrap"><div class="risk-bar" id="rHigh"></div></div>
+        <button class="coro-btn" onclick="animRisk()" style="margin-top:12px;background:var(--blue)">▶ Mostrar pesos</button>
       </div>
-    </div>
+    </div></div>
   </div>
 
   <!-- EnvironmentAnalyzer -->
-  <div class="class-detail" id="class-analyzer">
-    <div class="class-header" onclick="toggleClass(this)">
-      <div>
-        <div class="file">detection/EnvironmentAnalyzer.kt</div>
-        <h3>EnvironmentAnalyzer — fun interface (SAM)</h3>
-      </div>
-      <span class="chevron" style="transition:.3s">▼</span>
+  <div class="acc fade-up">
+    <div class="acc-head" onclick="tog(this)">
+      <div><div class="meta">detection/EnvironmentAnalyzer.kt</div><h3>EnvironmentAnalyzer — fun interface (SAM)</h3></div>
+      <div class="ch">▼</div>
     </div>
-    <div class="class-body">
-      <div class="class-inner">
-        <div class="pills">
-          <span class="pill-purple pill">fun interface</span>
-          <span class="pill-blue pill">SAM</span>
-          <span class="pill-green pill">testável com lambda</span>
-        </div>
-        <p style="color:var(--muted);font-size:.9rem;margin-bottom:16px">
-          Contrato único: recebe <code>Context</code>, devolve lista de signals.
-          <code>fun interface</code> (SAM = Single Abstract Method) permite instanciar com lambda diretamente.
-          Sem isso, testes precisariam de classes anônimas completas.
-        </p>
-        <pre>
-<span class="cm">// interface normal — precisa de boilerplate</span>
+    <div class="acc-body"><div class="acc-inner">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+        <span class="pill p-p">fun interface</span>
+        <span class="pill p-b">SAM conversion</span>
+        <span class="pill p-g">lambda instantiation</span>
+      </div>
+      <p style="color:var(--muted2);font-size:.9rem;margin-bottom:14px">
+        <strong>SAM = Single Abstract Method.</strong> Quando uma interface tem exatamente 1 método abstrato,
+        o Kotlin permite instanciá-la com uma lambda. A palavra-chave <code>fun</code> antes de <code>interface</code> habilita isso.
+      </p>
+      <pre>
+<span class="cm">// ❌ interface normal — verboso nos testes:</span>
 <span class="kw">val</span> fake = <span class="kw">object</span> : <span class="ty">EnvironmentAnalyzer</span> {
-    <span class="kw">override fun</span> <span class="fn">analyze</span>(ctx: <span class="ty">Context</span>) = <span class="fn">listOf</span>(signal)
+    <span class="kw">override fun</span> <span class="fn">analyze</span>(ctx: <span class="ty">Context</span>): <span class="ty">List</span>&lt;<span class="ty">DetectionSignal</span>&gt; {
+        <span class="kw">return</span> <span class="fn">listOf</span>(signal)
+    }
 }
 
-<span class="cm">// fun interface — instancia com lambda ✓</span>
+<span class="cm">// ✅ fun interface — uma linha em qualquer lugar:</span>
 <span class="kw">fun interface</span> <span class="ty">EnvironmentAnalyzer</span> {
     <span class="kw">fun</span> <span class="fn">analyze</span>(context: <span class="ty">Context</span>): <span class="ty">List</span>&lt;<span class="ty">DetectionSignal</span>&gt;
 }
-<span class="kw">val</span> fake = <span class="ty">EnvironmentAnalyzer</span> { <span class="fn">listOf</span>(signal) }  <span class="cm">// ✓</span></pre>
-      </div>
-    </div>
+
+<span class="cm">// No teste — instancia com lambda diretamente:</span>
+<span class="kw">val</span> goodAnalyzer = <span class="ty">EnvironmentAnalyzer</span> { <span class="fn">listOf</span>(goodSignal) }
+<span class="kw">val</span> crashAnalyzer = <span class="ty">EnvironmentAnalyzer</span> { <span class="kw">throw</span> <span class="ty">RuntimeException</span>(<span class="st">"crash"</span>) }
+<span class="kw">val</span> emptyAnalyzer = <span class="ty">EnvironmentAnalyzer</span> { <span class="fn">emptyList</span>() }</pre>
+    </div></div>
   </div>
 
   <!-- SecurityReport -->
-  <div class="class-detail" id="class-report">
-    <div class="class-header" onclick="toggleClass(this)">
-      <div>
-        <div class="file">detection/SecurityReport.kt</div>
-        <h3>SecurityReport — resultado imutável com computed properties</h3>
-      </div>
-      <span class="chevron" style="transition:.3s">▼</span>
+  <div class="acc fade-up">
+    <div class="acc-head" onclick="tog(this)">
+      <div><div class="meta">detection/SecurityReport.kt</div><h3>SecurityReport — data class com computed properties</h3></div>
+      <div class="ch">▼</div>
     </div>
-    <div class="class-body">
-      <div class="class-inner">
-        <div class="pills">
-          <span class="pill-green pill">data class</span>
-          <span class="pill-blue pill">computed properties</span>
-          <span class="pill-orange pill">sem backing field</span>
-        </div>
-        <pre>
+    <div class="acc-body"><div class="acc-inner">
+      <p style="color:var(--muted2);font-size:.9rem;margin-bottom:14px">
+        <strong>Computed property com <code>get()</code>:</strong> não existe backing field. O valor é recalculado toda vez que você acessa.
+        Isso garante que nunca fica desatualizado. <br>
+        <strong style="color:var(--orange)">Armadilha Kotlin 2.0:</strong> <code>sumOf</code> tem overloads para <code>Int</code> e <code>Long</code>.
+        O bloco <code>when</code> impede inferência automática — precisa de <code>.toInt()</code> explícito.
+      </p>
+      <pre>
 <span class="kw">data class</span> <span class="ty">SecurityReport</span>(<span class="kw">val</span> signals: <span class="ty">List</span>&lt;<span class="ty">DetectionSignal</span>&gt;) {
 
-    <span class="cm">// get() sem backing field → calculado toda vez, nunca stale</span>
-<span class="hl">    <span class="kw">val</span> isTampered: <span class="ty">Boolean</span></span>
-        <span class="kw">get</span>() = signals.<span class="fn">any</span> { it.severity != <span class="ty">Severity</span>.LOW }
+    <span class="cm">// get() sem backing field = recalculado a cada acesso</span>
+<span class="hl">    <span class="kw">val</span> isTampered: <span class="ty">Boolean</span> <span class="kw">get</span>() = signals.<span class="fn">any</span> { it.severity != <span class="ty">Severity</span>.LOW }</span>
 
-    <span class="kw">val</span> riskScore: <span class="ty">Int</span>
-        <span class="kw">get</span>() = signals.<span class="fn">sumOf</span> { signal ->
-            <span class="kw">when</span> (signal.severity) {
-                <span class="ty">Severity</span>.HIGH   -> <span class="nu">3</span>
-                <span class="ty">Severity</span>.MEDIUM -> <span class="nu">1</span>
-                <span class="ty">Severity</span>.LOW    -> <span class="nu">0</span>
-            }.<span class="fn">toInt</span>()  <span class="cm">// .toInt() necessário — Kotlin 2.0 sumOf ambiguidade</span>
-        }
+    <span class="kw">val</span> highSignals   <span class="kw">get</span>() = signals.<span class="fn">filter</span> { it.severity == <span class="ty">Severity</span>.HIGH }
+    <span class="kw">val</span> mediumSignals  <span class="kw">get</span>() = signals.<span class="fn">filter</span> { it.severity == <span class="ty">Severity</span>.MEDIUM }
+    <span class="kw">val</span> infoSignals    <span class="kw">get</span>() = signals.<span class="fn">filter</span> { it.severity == <span class="ty">Severity</span>.LOW }
+
+    <span class="kw">val</span> riskScore: <span class="ty">Int</span> <span class="kw">get</span>() = signals.<span class="fn">sumOf</span> { signal ->
+        <span class="kw">when</span> (signal.severity) {
+            <span class="ty">Severity</span>.HIGH   -> <span class="nu">3</span>
+            <span class="ty">Severity</span>.MEDIUM -> <span class="nu">1</span>
+            <span class="ty">Severity</span>.LOW    -> <span class="nu">0</span>
+<span class="hl">        }.<span class="fn">toInt</span>()  <span class="cm">// .toInt() obrigatório no Kotlin 2.0 — sumOf ambíguo</span></span>
+    }
 }</pre>
-        <p style="color:var(--muted);font-size:.85rem;margin-top:12px">
-          <strong style="color:var(--orange)">Armadilha Kotlin 2.0:</strong> <code>sumOf</code> tem overloads para <code>Int</code> e <code>Long</code>.
-          O compilador não infere qual usar dentro do bloco <code>when</code>.
-          Solução: <code>.toInt()</code> explícito no resultado.
-        </p>
-      </div>
-    </div>
+    </div></div>
   </div>
 
   <!-- EnvironmentGuard -->
-  <div class="class-detail" id="class-guard">
-    <div class="class-header" onclick="toggleClass(this)">
-      <div>
-        <div class="file">detection/EnvironmentGuard.kt</div>
-        <h3>EnvironmentGuard — Façade + Factory + Orquestrador assíncrono</h3>
-      </div>
-      <span class="chevron" style="transition:.3s">▼</span>
+  <div class="acc fade-up">
+    <div class="acc-head" onclick="tog(this)">
+      <div><div class="meta">detection/EnvironmentGuard.kt</div><h3>EnvironmentGuard — Façade + Factory + Orquestrador assíncrono</h3></div>
+      <div class="ch">▼</div>
     </div>
-    <div class="class-body">
-      <div class="class-inner">
-        <div class="pills">
-          <span class="pill-blue pill">Façade Pattern</span>
-          <span class="pill-purple pill">Factory Method</span>
-          <span class="pill-green pill">coroutines paralelas</span>
-          <span class="pill-orange pill">crash isolation</span>
-        </div>
-        <pre>
-<span class="kw">class</span> <span class="ty">EnvironmentGuard</span> <span class="kw">private constructor</span>(  <span class="cm">// ← construtor privado</span>
+    <div class="acc-body"><div class="acc-inner">
+      <p style="color:var(--muted2);font-size:.9rem;margin-bottom:14px">
+        <strong>Construtor <code>private</code>:</strong> ninguém cria diretamente. Só o <code>companion object</code> instancia,
+        garantindo que sempre recebe <code>context.applicationContext</code> — evita leak de Activity.<br><br>
+        <strong>Crash isolation:</strong> <code>runCatching { }.getOrDefault(emptyList())</code> garante que se um analyzer
+        lança exceção (ex: SecurityException ao ler <code>/proc/net/tcp</code>), os outros continuam rodando normalmente.
+      </p>
+      <pre>
+<span class="kw">class</span> <span class="ty">EnvironmentGuard</span> <span class="kw">private constructor</span>(  <span class="cm">// ← ninguém instancia direto</span>
     <span class="kw">private val</span> context: <span class="ty">Context</span>,
     <span class="kw">private val</span> analyzers: <span class="ty">List</span>&lt;<span class="ty">EnvironmentAnalyzer</span>&gt;,
 ) {
     <span class="kw">suspend fun</span> <span class="fn">generateReport</span>(): <span class="ty">SecurityReport</span> = <span class="fn">coroutineScope</span> {
         <span class="kw">val</span> deferred = analyzers.<span class="fn">map</span> { analyzer ->
             <span class="fn">async</span>(<span class="ty">Dispatchers</span>.Default) {
-<span class="hl">                <span class="fn">runCatching</span> { analyzer.<span class="fn">analyze</span>(context) }.<span class="fn">getOrDefault</span>(<span class="fn">emptyList</span>())</span>
+<span class="hl">                <span class="fn">runCatching</span> { analyzer.<span class="fn">analyze</span>(context) }  <span class="cm">// crash isolado</span></span>
+                    .<span class="fn">getOrDefault</span>(<span class="fn">emptyList</span>())
             }
         }
         <span class="ty">SecurityReport</span>(deferred.<span class="fn">awaitAll</span>().<span class="fn">flatten</span>())
     }
-
     <span class="kw">companion object</span> {
-        <span class="cm">// Produção — lista hardcoded de todos os analyzers</span>
-        <span class="kw">fun</span> <span class="fn">create</span>(context: <span class="ty">Context</span>) = <span class="fn">create</span>(context,
+        <span class="kw">fun</span> <span class="fn">create</span>(ctx: <span class="ty">Context</span>) = <span class="fn">create</span>(ctx,
             <span class="fn">listOf</span>(<span class="ty">EmulatorAnalyzer</span>(), <span class="ty">CloneAnalyzer</span>(), <span class="ty">VirtualizationAnalyzer</span>(),
                    <span class="ty">SignatureAnalyzer</span>(), <span class="ty">RootDetector</span>()))
-
-        <span class="cm">// Testes — injeta qualquer lista</span>
-        <span class="kw">fun</span> <span class="fn">create</span>(context: <span class="ty">Context</span>, analyzers: <span class="ty">List</span>&lt;<span class="ty">EnvironmentAnalyzer</span>&gt;) =
-            <span class="ty">EnvironmentGuard</span>(context.<span class="fn">applicationContext</span>, analyzers)
+        <span class="kw">fun</span> <span class="fn">create</span>(ctx: <span class="ty">Context</span>, analyzers: <span class="ty">List</span>&lt;<span class="ty">EnvironmentAnalyzer</span>&gt;) =
+            <span class="ty">EnvironmentGuard</span>(ctx.<span class="fn">applicationContext</span>, analyzers)
     }
 }</pre>
+    </div></div>
+  </div>
+</section>
+<hr class="div">
+
+<!-- ═══════════════ COROUTINES ═══════════════ -->
+<section id="coroutines">
+  <h2 class="sec-title fade-up"><span>⚡</span> Coroutines — 5 Analyzers em Paralelo</h2>
+  <p class="sec-sub fade-up">
+    Cada analyzer faz I/O bloqueante (<code>/proc/cpuinfo</code>, sockets TCP, leitura de arquivos).
+    Rodá-los sequencialmente levaria 5× mais tempo. Com <code>async/awaitAll</code> rodam simultaneamente.
+  </p>
+
+  <div class="coro-wrap fade-up">
+    <div style="font-size:.85rem;font-weight:700;margin-bottom:16px">
+      Simulação de execução paralela — cada barra = tempo do analyzer
+    </div>
+    <div class="coro-lanes" id="coroLanes">
+      <div class="lane">
+        <div class="lane-lbl">📱 EmulatorAnalyzer</div>
+        <div class="lane-track"><div class="lane-fill" id="l1" style="background:var(--blue)"></div></div>
+        <div class="lane-result" id="r1">8 signals</div>
+      </div>
+      <div class="lane">
+        <div class="lane-lbl">🔑 RootDetector</div>
+        <div class="lane-track"><div class="lane-fill" id="l2" style="background:var(--red)"></div></div>
+        <div class="lane-result" id="r2">3 signals</div>
+      </div>
+      <div class="lane">
+        <div class="lane-lbl">👥 CloneAnalyzer</div>
+        <div class="lane-track"><div class="lane-fill" id="l3" style="background:var(--green)"></div></div>
+        <div class="lane-result" id="r3">0 signals</div>
+      </div>
+      <div class="lane">
+        <div class="lane-lbl">🪝 VirtualizationAnalyzer</div>
+        <div class="lane-track"><div class="lane-fill" id="l4" style="background:var(--purple)"></div></div>
+        <div class="lane-result" id="r4">2 signals</div>
+      </div>
+      <div class="lane">
+        <div class="lane-lbl">✍️ SignatureAnalyzer</div>
+        <div class="lane-track"><div class="lane-fill" id="l5" style="background:var(--orange)"></div></div>
+        <div class="lane-result" id="r5">1 signal</div>
       </div>
     </div>
+    <div class="coro-status" id="coroStatus">Pressione ▶ para simular execução paralela</div>
+    <button class="coro-btn" onclick="animCoro()">▶ Executar em Paralelo</button>
   </div>
 
-  <!-- EmulatorAnalyzer -->
-  <div class="class-detail" id="class-emulator">
-    <div class="class-header" onclick="toggleClass(this)">
-      <div>
-        <div class="file">analyzers/EmulatorAnalyzer.kt</div>
-        <h3>EmulatorAnalyzer — 4 camadas de detecção de emuladores</h3>
-      </div>
-      <span class="chevron" style="transition:.3s">▼</span>
+  <div class="grid g2 fade-up" style="margin-top:20px">
+    <div class="card">
+      <h3>🔀 <code>async { }</code> — lança sem bloquear</h3>
+      <p>Cria uma coroutine que executa no <code>Dispatchers.Default</code> (thread pool de CPU).
+      Retorna um <code>Deferred&lt;T&gt;</code> — uma "promessa" de resultado futuro.
+      O código continua sem esperar.</p>
     </div>
-    <div class="class-body">
-      <div class="class-inner">
-        <div class="pills">
-          <span class="pill-red pill">Build.*</span>
-          <span class="pill-blue pill">SystemProperties (reflection)</span>
-          <span class="pill-orange pill">arquivos QEMU</span>
-          <span class="pill-green pill">/proc/cpuinfo</span>
-          <span class="pill-purple pill">stealth charArrayOf</span>
-        </div>
-        <div class="card-grid" style="margin:16px 0">
-          <div class="card">
-            <h3>🔍 Build.* properties</h3>
-            <p>FINGERPRINT, MODEL, HARDWARE, MANUFACTURER. Emulador AVD tem HARDWARE="goldfish" ou "ranchu".</p>
-          </div>
-          <div class="card">
-            <h3>🔒 SystemProperties via reflection</h3>
-            <p>Classe @hide do Android. <code>ro.kernel.qemu=1</code> está setado em todo emulador QEMU.</p>
-          </div>
-          <div class="card">
-            <h3>📁 Arquivos QEMU</h3>
-            <p><code>/dev/socket/qemud</code>, <code>/dev/qemu_pipe</code>, <code>/dev/socket/genyd</code> (Genymotion).</p>
-          </div>
-          <div class="card">
-            <h3>🖥️ /proc/cpuinfo</h3>
-            <p>"goldfish" ou "qemu" no cpuinfo indica CPU virtual do QEMU.</p>
-          </div>
-        </div>
-        <pre>
-<span class="cm">// Stealth: "goldfish" nunca aparece literal no APK</span>
-<span class="cm">// strings app.apk | grep goldfish → nada encontrado</span>
-<span class="kw">val</span> goldfish = <span class="fn">charArrayOf</span>(<span class="st">'g'</span>,<span class="st">'o'</span>,<span class="st">'l'</span>,<span class="st">'d'</span>,<span class="st">'f'</span>,<span class="st">'i'</span>,<span class="st">'s'</span>,<span class="st">'h'</span>).<span class="fn">concatToString</span>()
-<span class="kw">val</span> cpuInfo = <span class="ty">File</span>(<span class="st">"/proc/cpuinfo"</span>).<span class="fn">readText</span>().<span class="fn">lowercase</span>()
-<span class="kw">if</span> (cpuInfo.<span class="fn">contains</span>(goldfish)) { <span class="cm">/* EMULATOR signal */</span> }</pre>
-      </div>
+    <div class="card">
+      <h3>⏳ <code>awaitAll()</code> — espera todos</h3>
+      <p>Bloqueia (suspende) até que todos os <code>Deferred</code> completem.
+      Se um falhar, cancela os outros (mas usamos <code>runCatching</code> para evitar isso).
+      Retorna <code>List&lt;List&lt;DetectionSignal&gt;&gt;</code>.</p>
+    </div>
+    <div class="card">
+      <h3>🛡️ <code>runCatching { }</code> — crash isolation</h3>
+      <p>Envolve o <code>analyze()</code> em try/catch implícito.
+      Se um analyzer lança exceção, o <code>getOrDefault(emptyList())</code> retorna lista vazia.
+      Os outros analyzers não são afetados.</p>
+    </div>
+    <div class="card">
+      <h3>📋 <code>.flatten()</code> — achata resultado</h3>
+      <p>Transforma <code>List&lt;List&lt;DetectionSignal&gt;&gt;</code> em
+      <code>List&lt;DetectionSignal&gt;</code>.
+      O <code>SecurityReport</code> recebe uma lista plana única com todos os signals.</p>
     </div>
   </div>
+</section>
+<hr class="div">
 
-  <!-- RootDetector -->
-  <div class="class-detail" id="class-root">
-    <div class="class-header" onclick="toggleClass(this)">
-      <div>
-        <div class="file">analyzers/RootDetector.kt</div>
-        <h3>RootDetector — DI via lambda, 4 estratégias anti-root</h3>
-      </div>
-      <span class="chevron" style="transition:.3s">▼</span>
+<!-- ═══════════════ AMEAÇAS ═══════════════ -->
+<section id="threats">
+  <h2 class="sec-title fade-up"><span>🛡️</span> Cada Ameaça Explicada</h2>
+  <p class="sec-sub fade-up">Como cada tipo de ataque funciona, o que o atacante consegue fazer, e como o GuardApp detecta.</p>
+
+  <!-- Emulador -->
+  <div class="threat fade-up">
+    <div class="threat-head" onclick="togT(this)">
+      <span style="font-size:1.3rem">📱</span>
+      <h3>Emuladores — Farms de Fraude em Escala</h3>
+      <span class="severity sev-h">HIGH</span>
+      <div class="ch" style="color:var(--muted);transition:.3s">▼</div>
     </div>
-    <div class="class-body">
-      <div class="class-inner">
-        <div class="pills">
-          <span class="pill-blue pill">lambda injection</span>
-          <span class="pill-red pill">su binaries</span>
-          <span class="pill-orange pill">root apps</span>
-          <span class="pill-green pill">system props</span>
-          <span class="pill-purple pill">writable /system</span>
+    <div class="threat-body"><div class="threat-inner">
+      <div class="grid g2" style="margin-bottom:16px">
+        <div class="card" style="border-color:var(--red)">
+          <h3>🔴 O que o atacante faz</h3>
+          <p>Roda 200+ emuladores AVD/Genymotion num servidor. Cria 10.000 contas falsas/dia. Simula localizações em qualquer lugar do mundo. Reset completo em segundos via snapshot.</p>
         </div>
-        <pre>
-<span class="cm">// Dependências injetáveis → testável na JVM sem Robolectric</span>
-<span class="kw">class</span> <span class="ty">RootDetector</span>(
-    <span class="kw">private val</span> fileProbe:      (<span class="ty">String</span>) -> <span class="ty">Boolean</span>           = { <span class="ty">File</span>(it).<span class="fn">exists</span>() },
-    <span class="kw">private val</span> writableProbe:  (<span class="ty">String</span>) -> <span class="ty">Boolean</span>           = { <span class="ty">File</span>(it).<span class="fn">canWrite</span>() },
-    <span class="kw">private val</span> packageChecker: (<span class="ty">Context</span>, <span class="ty">String</span>) -> <span class="ty">Boolean</span>   = { ctx, pkg -> ... },
-) : <span class="ty">EnvironmentAnalyzer</span>
-
-<span class="cm">// No teste — sem File.exists() real:</span>
-<span class="kw">val</span> detector = <span class="ty">RootDetector</span>(fileProbe = { it == <span class="st">"/system/bin/su"</span> })
-<span class="kw">val</span> signals  = detector.<span class="fn">checkSuBinaries</span>()  <span class="cm">// retorna 1 signal ✓</span></pre>
-        <div class="card-grid" style="margin-top:16px">
-          <div class="card">
-            <h3>🗡️ su binaries</h3>
-            <p>9 paths onde o binário <code>su</code> aparece em dispositivos rooteados. Magisk monta em <code>/sbin/.magisk/mirror/</code>.</p>
-          </div>
-          <div class="card">
-            <h3>📱 Root management apps</h3>
-            <p>Magisk, SuperSU, KingRoot etc. Visíveis via PackageManager (requer <code>&lt;queries&gt;</code> no manifesto).</p>
-          </div>
-          <div class="card">
-            <h3>⚙️ System properties</h3>
-            <p><code>ro.debuggable=1</code>, <code>ro.secure=0</code>, <code>ro.build.type=eng</code>. Só em builds de desenvolvimento.</p>
-          </div>
-          <div class="card">
-            <h3>💾 Writable /system</h3>
-            <p>Em dispositivo limpo, <code>/system</code> é sempre read-only. Se <code>canWrite()</code> retorna true → remontado com root.</p>
-          </div>
+        <div class="card" style="border-color:var(--green)">
+          <h3>🟢 Como detectamos — 4 camadas</h3>
+          <p>Build.* properties + SystemProperties via reflection + arquivos QEMU em /dev + marcadores em /proc/cpuinfo. Um emulador raramente engana todas as 4.</p>
         </div>
       </div>
-    </div>
+      <pre>
+<span class="cm">// Camada 1: Build.FINGERPRINT</span>
+<span class="cm">// Emulador AVD: "generic/sdk_gphone_x86/generic_x86:11/RSR1..."</span>
+<span class="cm">// Dispositivo real: "google/flame/flame:12/SQ3A.220705.003.A1..."</span>
+<span class="kw">val</span> fp = <span class="ty">Build</span>.FINGERPRINT.<span class="fn">lowercase</span>()
+<span class="kw">if</span> (fp.<span class="fn">startsWith</span>(<span class="st">"generic"</span>) || fp.<span class="fn">contains</span>(<span class="st">"emulator"</span>)) { <span class="cm">/* HIGH signal */</span> }
+
+<span class="cm">// Camada 2: Build.HARDWARE</span>
+<span class="cm">// goldfish = nome do hardware virtual do QEMU desde Android 1.0</span>
+<span class="cm">// ranchu = hardware do QEMU 2+ (Android Studio atual)</span>
+<span class="kw">if</span> (<span class="ty">Build</span>.HARDWARE.<span class="fn">lowercase</span>() <span class="kw">in</span> <span class="fn">setOf</span>(<span class="st">"goldfish"</span>, <span class="st">"ranchu"</span>, <span class="st">"vbox86"</span>)) { <span class="cm">/* HIGH */</span> }
+
+<span class="cm">// Camada 3: arquivo exclusivo do QEMU</span>
+<span class="cm">// Só existe no emulador, nunca num device real</span>
+<span class="kw">if</span> (<span class="ty">File</span>(<span class="st">"/dev/socket/qemud"</span>).<span class="fn">exists</span>()) { <span class="cm">/* HIGH signal */</span> }
+
+<span class="cm">// Camada 4: /proc/cpuinfo — CPU virtual do QEMU</span>
+<span class="kw">val</span> cpu = <span class="ty">File</span>(<span class="st">"/proc/cpuinfo"</span>).<span class="fn">readText</span>()
+<span class="kw">if</span> (cpu.<span class="fn">contains</span>(<span class="st">"goldfish"</span>, ignoreCase = <span class="kw">true</span>)) { <span class="cm">/* HIGH signal */</span> }</pre>
+    </div></div>
   </div>
 
-  <!-- CloneAnalyzer -->
-  <div class="class-detail" id="class-clone">
-    <div class="class-header" onclick="toggleClass(this)">
-      <div>
-        <div class="file">analyzers/CloneAnalyzer.kt</div>
-        <h3>CloneAnalyzer — 5 estratégias anti-clone</h3>
-      </div>
-      <span class="chevron" style="transition:.3s">▼</span>
+  <!-- Root -->
+  <div class="threat fade-up">
+    <div class="threat-head" onclick="togT(this)">
+      <span style="font-size:1.3rem">🌱</span>
+      <h3>Root / Magisk — Controle Total do Dispositivo</h3>
+      <span class="severity sev-h">HIGH</span>
+      <div class="ch" style="color:var(--muted);transition:.3s">▼</div>
     </div>
-    <div class="class-body">
-      <div class="class-inner">
-        <div class="pills">
-          <span class="pill-orange pill">UID ≥ 100000</span>
-          <span class="pill-blue pill">dataDir path</span>
-          <span class="pill-green pill">24 clone packages</span>
-          <span class="pill-red pill">file artifacts</span>
-          <span class="pill-purple pill">/proc/self/maps</span>
+    <div class="threat-body"><div class="threat-inner">
+      <p style="color:var(--muted2);font-size:.9rem;margin-bottom:16px">
+        <strong>Magisk (systemless root):</strong> em vez de modificar a partição <code>/system</code> (bloqueada pelo <code>dm-verity</code>),
+        o Magisk monta um filesystem virtual via <code>tmpfs</code> <em>sobre</em> o <code>/system</code>.
+        Do ponto de vista do app, o sistema parece intacto. Mas o binário <code>su</code> está disponível em caminhos específicos.
+      </p>
+      <div class="uid-grid">
+        <div class="uid-block" style="border-color:var(--red)">
+          <div style="font-size:.85rem;font-weight:700;color:var(--red)">⚠️ O que root permite</div>
+          <ul style="font-size:.82rem;color:var(--muted2);margin-top:8px;padding-left:16px;line-height:2">
+            <li>Editar <code>/etc/hosts</code> (MITM de DNS)</li>
+            <li>Instalar CA customizado no sistema</li>
+            <li>Rodar <code>frida-server</code></li>
+            <li>Ler banco de dados de outros apps</li>
+            <li>Remontar <code>/system</code> como writable</li>
+          </ul>
         </div>
-        <pre>
+        <div class="uid-block" style="border-color:var(--green)">
+          <div style="font-size:.85rem;font-weight:700;color:var(--green)">✅ Nossas 4 defesas</div>
+          <ul style="font-size:.82rem;color:var(--muted2);margin-top:8px;padding-left:16px;line-height:2">
+            <li>9 paths de binário <code>su</code></li>
+            <li>12 root management apps</li>
+            <li><code>ro.debuggable</code>, <code>ro.secure</code></li>
+            <li><code>/system</code> canWrite() check</li>
+          </ul>
+        </div>
+      </div>
+      <pre style="margin-top:14px">
+<span class="cm">// /system sempre read-only num device limpo</span>
+<span class="cm">// se canWrite() = true → foi remontado com root</span>
+<span class="kw">val</span> writableProbe: (<span class="ty">String</span>) -> <span class="ty">Boolean</span> = { <span class="ty">File</span>(it).<span class="fn">canWrite</span>() }
+
+<span class="cm">// ro.debuggable=1: adb root funciona, sem senha</span>
+<span class="cm">// ro.secure=0: sem enforcing de permissões Linux</span>
+<span class="cm">// ro.build.type=eng: build de engenharia (vai para usuário final em fraude)</span>
+<span class="kw">val</span> clazz = <span class="ty">Class</span>.<span class="fn">forName</span>(<span class="st">"android.os.SystemProperties"</span>)
+<span class="kw">val</span> get = clazz.<span class="fn">getMethod</span>(<span class="st">"get"</span>, <span class="ty">String</span>::<span class="kw">class</span>.java, <span class="ty">String</span>::<span class="kw">class</span>.java)
+<span class="kw">val</span> debuggable = get.<span class="fn">invoke</span>(<span class="kw">null</span>, <span class="st">"ro.debuggable"</span>, <span class="st">""</span>) <span class="kw">as</span> <span class="ty">String</span>
+<span class="kw">if</span> (debuggable == <span class="st">"1"</span>) { <span class="cm">/* HIGH signal */</span> }</pre>
+    </div></div>
+  </div>
+
+  <!-- Clone -->
+  <div class="threat fade-up">
+    <div class="threat-head" onclick="togT(this)">
+      <span style="font-size:1.3rem">👥</span>
+      <h3>Clone Apps / VirtualApp — Identidade Paralela</h3>
+      <span class="severity sev-h">HIGH</span>
+      <div class="ch" style="color:var(--muted);transition:.3s">▼</div>
+    </div>
+    <div class="threat-body"><div class="threat-inner">
+      <p style="color:var(--muted2);font-size:.9rem;margin-bottom:16px">
+        Apps como Parallel Space criam um "Android virtual" dentro do processo deles.
+        Seu app roda como processo filho com UID diferente — pode nem saber que está num container.
+      </p>
+      <div class="uid-grid">
+        <div class="uid-block primary">
+          <div style="font-size:.85rem;font-weight:700;color:var(--green)">👤 Usuário Primário</div>
+          <div class="uid-range">UIDs: 10.000 – 99.999</div>
+          <div style="font-size:.8rem;color:var(--muted2);margin-top:6px">userId = myUid() / 100.000 = <strong style="color:var(--green)">0</strong> ✓</div>
+          <div style="font-size:.8rem;color:var(--muted2)">dataDir: <code>/data/data/com.app</code></div>
+        </div>
+        <div class="uid-block clone">
+          <div style="font-size:.85rem;font-weight:700;color:var(--red)">👤👤 Usuário Clone</div>
+          <div class="uid-range">UIDs: 110.000 – 199.999</div>
+          <div style="font-size:.8rem;color:var(--muted2);margin-top:6px">userId = myUid() / 100.000 = <strong style="color:var(--red)">1</strong> ⚠️</div>
+          <div style="font-size:.8rem;color:var(--muted2)">dataDir: <code>/data/user/10/com.app</code></div>
+        </div>
+      </div>
+      <pre style="margin-top:14px">
 <span class="cm">// Android aloca UIDs em blocos de 100.000 por usuário</span>
-<span class="cm">// Usuário primário: UIDs 10000–99999</span>
-<span class="cm">// Clone/perfil de trabalho: UIDs 110000–199999</span>
-<span class="kw">val</span> userId = <span class="fn">uidProvider</span>() / <span class="nu">100_000</span>
-<span class="kw">if</span> (userId != <span class="nu">0</span>) {
-    <span class="cm">// rodando em usuário Android secundário → clone</span>
-}
+<span class="cm">// Primário: 10.000–99.999  │  Usuário 1: 110.000–199.999</span>
+<span class="kw">val</span> userId = <span class="ty">Process</span>.<span class="fn">myUid</span>() / <span class="nu">100_000</span>
+<span class="kw">if</span> (userId != <span class="nu">0</span>) { <span class="cm">/* rodando em usuário secundário → CLONE */</span> }
 
-<span class="cm">// Data dir redirecionado pelo clone framework</span>
+<span class="cm">// dataDir revelando o clone:</span>
+<span class="cm">// Legítimo: /data/data/com.incognia.guardapp</span>
+<span class="cm">// Clone:    /data/user/10/com.incognia.guardapp ← userId=10</span>
 <span class="kw">val</span> expected = <span class="fn">listOf</span>(
     <span class="st">"/data/data/${context.packageName}"</span>,
     <span class="st">"/data/user/0/${context.packageName}"</span>
 )
-<span class="kw">if</span> (expected.<span class="fn">none</span> { dataDir.<span class="fn">startsWith</span>(it) }) { <span class="cm">/* clone */</span> }</pre>
-      </div>
-    </div>
-  </div>
+<span class="kw">if</span> (expected.<span class="fn">none</span> { dataDir.<span class="fn">startsWith</span>(it) }) { <span class="cm">/* HIGH signal */</span> }
 
-  <!-- VirtualizationAnalyzer -->
-  <div class="class-detail" id="class-virt">
-    <div class="class-header" onclick="toggleClass(this)">
-      <div>
-        <div class="file">analyzers/VirtualizationAnalyzer.kt</div>
-        <h3>VirtualizationAnalyzer — Frida, Xposed, Substrate</h3>
-      </div>
-      <span class="chevron" style="transition:.3s">▼</span>
-    </div>
-    <div class="class-body">
-      <div class="class-inner">
-        <div class="pills">
-          <span class="pill-red pill">Frida port 27042</span>
-          <span class="pill-orange pill">/proc/net/tcp parser</span>
-          <span class="pill-blue pill">ClassLoader probe</span>
-          <span class="pill-purple pill">/proc/self/maps</span>
-        </div>
-        <p style="color:var(--muted);font-size:.85rem;margin-bottom:12px">
-          Decodificação do <code>/proc/net/tcp</code>: IP é little-endian, porta é big-endian.
-          <strong style="color:var(--red)">Bug corrigido nessa sessão:</strong> porta Frida 27042 = <code>0x69A2</code>, não <code>0x699A</code>.
-        </p>
-        <table class="tcp-table">
-          <tr>
-            <th>sl</th><th>local_address</th><th>rem_address</th><th>st</th><th>significado</th>
-          </tr>
-          <tr id="tcpRow1">
-            <td>0:</td>
-            <td id="tcpLocal" class="port-col">0100007F:<span id="tcpPort">69A2</span></td>
-            <td>00000000:0000</td>
-            <td class="state-col">0A</td>
-            <td style="color:var(--red);font-size:.75rem">⚠️ Frida LISTEN</td>
-          </tr>
-          <tr>
-            <td>1:</td>
-            <td>0200007F:C350</td>
-            <td>0100007F:69A2</td>
-            <td class="state-col">01</td>
-            <td style="color:var(--green);font-size:.75rem">✓ ESTABLISHED — ignorado</td>
-          </tr>
-        </table>
-        <div style="font-size:.78rem;color:var(--muted);margin-bottom:12px">
-          <code>0100007F</code> = bytes <code>01 00 00 7F</code> → little-endian → <code>7F.00.00.01</code> = <code>127.0.0.1</code><br>
-          <code>69A2</code> = <code>6×16³ + 9×16² + 10×16 + 2</code> = <code>24576+2304+160+2</code> = <strong>27042</strong><br>
-          <code>0A</code> = TCP_LISTEN (estado que confirma servidor aguardando conexão)
-        </div>
-        <pre>
-<span class="cm">// Parseamento correto — evita falsos positivos no rem_address</span>
-<span class="kw">val</span> fridaPortHex = <span class="st">"69A2"</span>  <span class="cm">// 27042 = 0x69A2  ← corrigido nessa sessão</span>
-<span class="kw">val</span> localPort = parts[<span class="nu">1</span>].<span class="fn">substringAfter</span>(<span class="st">":"</span>)  <span class="cm">// coluna 1 = local</span>
-<span class="kw">val</span> state     = parts[<span class="nu">3</span>]                        <span class="cm">// coluna 3 = estado</span>
-<span class="kw">if</span> (localPort.<span class="fn">equals</span>(fridaPortHex, ignoreCase = <span class="kw">true</span>)
-    && state.<span class="fn">equals</span>(<span class="st">"0A"</span>, ignoreCase = <span class="kw">true</span>)) { <span class="cm">/* Frida */</span> }</pre>
-      </div>
-    </div>
-  </div>
-
-  <!-- SignatureAnalyzer -->
-  <div class="class-detail" id="class-sig">
-    <div class="class-header" onclick="toggleClass(this)">
-      <div>
-        <div class="file">analyzers/SignatureAnalyzer.kt</div>
-        <h3>SignatureAnalyzer — integridade do APK via X.509</h3>
-      </div>
-      <span class="chevron" style="transition:.3s">▼</span>
-    </div>
-    <div class="class-body">
-      <div class="class-inner">
-        <div class="pills">
-          <span class="pill-blue pill">X.509 cert</span>
-          <span class="pill-red pill">debug key detection</span>
-          <span class="pill-orange pill">SHA-256 hash</span>
-          <span class="pill-green pill">install source</span>
-          <span class="pill-purple pill">package name consistency</span>
-        </div>
-        <pre>
-<span class="cm">// Quem repackageia assina com debug key → subject conhecido</span>
-<span class="kw">val</span> cert = <span class="ty">CertificateFactory</span>.<span class="fn">getInstance</span>(<span class="st">"X.509"</span>)
-    .<span class="fn">generateCertificate</span>(<span class="ty">ByteArrayInputStream</span>(sig.<span class="fn">toByteArray</span>())) <span class="kw">as</span> <span class="ty">X509Certificate</span>
-<span class="kw">val</span> subject = cert.subjectDN.name
-<span class="cm">// Debug key → "CN=Android Debug, O=Android, C=US"</span>
-<span class="kw">if</span> (subject.<span class="fn">contains</span>(<span class="st">"Android Debug"</span>)) { <span class="cm">/* MEDIUM signal */</span> }
-
-<span class="cm">// API difference: GET_SIGNING_CERTIFICATES (API 28+) vs GET_SIGNATURES</span>
-<span class="kw">val</span> sigs = <span class="kw">if</span> (<span class="ty">Build</span>.VERSION.SDK_INT >= <span class="ty">Build</span>.VERSION_CODES.P) {
-    pm.<span class="fn">getPackageInfo</span>(pkg, <span class="ty">GET_SIGNING_CERTIFICATES</span>).signingInfo?.apkContentsSigners
-} <span class="kw">else</span> {
-    pm.<span class="fn">getPackageInfo</span>(pkg, <span class="ty">GET_SIGNATURES</span>).signatures  <span class="cm">// deprecated</span>
+<span class="cm">// /proc/self/maps denuncia a biblioteca nativa do clone:</span>
+<span class="cm">// "com.lbe.parallel" ou "io.va" mapeado → Parallel Space ativo</span>
+<span class="ty">File</span>(<span class="st">"/proc/self/maps"</span>).<span class="fn">forEachLine</span> { line ->
+    <span class="kw">if</span> (line.<span class="fn">contains</span>(<span class="st">"com.lbe.parallel"</span>, ignoreCase = <span class="kw">true</span>)) { <span class="cm">/* HIGH */</span> }
 }</pre>
-      </div>
-    </div>
-  </div>
-</section>
-<hr class="divider">
-
-<!-- ═══════════════════════════════ THREATS ═══════════════════════════════ -->
-<section id="threats">
-  <h2><span class="icon">🛡️</span> Ameaças em Detalhe</h2>
-  <p class="section-sub">Como cada ataque funciona e como o SDK detecta</p>
-
-  <div class="threat-card" id="threat-frida">
-    <div class="threat-header" onclick="toggleThreat(this)">
-      <span class="icon">🪝</span>
-      <h3>Frida — Instrumentação Dinâmica</h3>
-      <span style="font-size:.75rem;padding:2px 8px;border-radius:12px;background:rgba(248,81,73,.15);color:var(--red)">HIGH</span>
-      <span class="chevron">▼</span>
-    </div>
-    <div class="threat-body">
-      <div class="threat-inner">
-        <p style="color:var(--muted);font-size:.9rem;margin-bottom:16px">
-          Frida é um framework open source de instrumentação dinâmica. Permite interceptar e modificar
-          qualquer função Java/Kotlin ou nativa em runtime, sem modificar o APK.
-        </p>
-        <div class="card-grid">
-          <div class="card" style="border-color:var(--red)">
-            <h3>🔴 O ataque</h3>
-            <p>Atacante conecta frida-server (daemon root, porta 27042) e injeta script JS que hookeia <code>generateReport()</code> para sempre retornar relatório limpo.</p>
-          </div>
-          <div class="card" style="border-color:var(--green)">
-            <h3>🟢 Nossa defesa</h3>
-            <p>3 camadas: socket probe na porta 27042, parser de <code>/proc/net/tcp</code> procurando estado LISTEN, e varredura de <code>/proc/self/maps</code> por <code>frida-agent.so</code>.</p>
-          </div>
-        </div>
-        <pre>
-<span class="cm">// Script Frida que burlaria um SDK sem proteção:</span>
-<span class="ty">Java</span>.<span class="fn">perform</span>(() => {
-  <span class="kw">const</span> Guard = <span class="ty">Java</span>.<span class="fn">use</span>(<span class="st">'com.incognia.guardapp.detection.EnvironmentGuard'</span>);
-  Guard.generateReport.implementation = <span class="kw">async function</span>() {
-    <span class="kw">return</span> <span class="ty">Java</span>.<span class="fn">use</span>(<span class="st">'com.incognia.guardapp.detection.SecurityReport'</span>)
-      .<span class="fn">$new</span>(<span class="ty">Java</span>.<span class="fn">use</span>(<span class="st">'java.util.ArrayList'</span>).<span class="fn">$new</span>());
-  };
-});</pre>
-      </div>
-    </div>
+    </div></div>
   </div>
 
-  <div class="threat-card">
-    <div class="threat-header" onclick="toggleThreat(this)">
-      <span class="icon">💉</span>
-      <h3>Xposed / LSPosed — Hooking de Classpath</h3>
-      <span style="font-size:.75rem;padding:2px 8px;border-radius:12px;background:rgba(248,81,73,.15);color:var(--red)">HIGH</span>
-      <span class="chevron">▼</span>
+  <!-- Signature -->
+  <div class="threat fade-up">
+    <div class="threat-head" onclick="togT(this)">
+      <span style="font-size:1.3rem">📦</span>
+      <h3>APK Repackaging — Distribuição de Versão Modificada</h3>
+      <span class="severity sev-m">MEDIUM</span>
+      <div class="ch" style="color:var(--muted);transition:.3s">▼</div>
     </div>
-    <div class="threat-body">
-      <div class="threat-inner">
-        <p style="color:var(--muted);font-size:.9rem;margin-bottom:16px">
-          Xposed modifica o <code>app_process</code> do Android — o processo que inicializa toda aplicação.
-          Injeta <code>XposedBridge.jar</code> no classpath de cada app antes do código rodar.
-        </p>
-        <pre>
-<span class="cm">// Módulo Xposed que desativa todas as detecções:</span>
-<span class="ty">XposedHelpers</span>.<span class="fn">findAndHookMethod</span>(
-    <span class="st">"com.incognia.guardapp.detection.EnvironmentGuard"</span>,
-    lpparam.classLoader,
-    <span class="st">"generateReport"</span>,
-    <span class="kw">new</span> <span class="ty">XC_MethodReplacement</span>() {
-        <span class="kw">protected</span> <span class="ty">Object</span> <span class="fn">replaceHookedMethod</span>(<span class="ty">MethodHookParam</span> param) {
-            <span class="kw">return new</span> <span class="ty">SecurityReport</span>(<span class="ty">Collections</span>.<span class="fn">emptyList</span>());
-        }
-    }
-);
-
-<span class="cm">// Nossa detecção — classe acessível = Xposed ativo:</span>
-<span class="kw">try</span> { <span class="ty">Class</span>.<span class="fn">forName</span>(<span class="st">"de.robv.android.xposed.XposedBridge"</span>) }
-<span class="kw">catch</span> (_: <span class="ty">ClassNotFoundException</span>) { <span class="cm">/* limpo */</span> }</pre>
-      </div>
-    </div>
-  </div>
-
-  <div class="threat-card">
-    <div class="threat-header" onclick="toggleThreat(this)">
-      <span class="icon">🌱</span>
-      <h3>Root / Magisk — Controle Total do Dispositivo</h3>
-      <span style="font-size:.75rem;padding:2px 8px;border-radius:12px;background:rgba(248,81,73,.15);color:var(--red)">HIGH</span>
-      <span class="chevron">▼</span>
-    </div>
-    <div class="threat-body">
-      <div class="threat-inner">
-        <p style="color:var(--muted);font-size:.9rem;margin-bottom:16px">
-          Magisk usa <code>tmpfs</code> para montar um filesystem virtual <em>sobre</em> o <code>/system</code> real,
-          contornando o <code>dm-verity</code> (verificação de integridade do Android). Do ponto de vista do app, o sistema parece intacto.
-        </p>
-        <div class="card-grid">
-          <div class="card" style="border-color:var(--red)">
-            <h3>🔴 O que root permite</h3>
-            <p>Editar <code>/etc/hosts</code>, instalar CA customizado para MITM de HTTPS, ler banco de dados interno do app, rodar frida-server.</p>
-          </div>
-          <div class="card" style="border-color:var(--green)">
-            <h3>🟢 Nossas 4 defesas</h3>
-            <p>su binaries em 9 paths, 12 root management apps via PackageManager, system props (ro.debuggable), e <code>/system</code> writable check.</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="threat-card">
-    <div class="threat-header" onclick="toggleThreat(this)">
-      <span class="icon">👥</span>
-      <h3>Clone Apps / VirtualApp — Identidade Paralela</h3>
-      <span style="font-size:.75rem;padding:2px 8px;border-radius:12px;background:rgba(248,81,73,.15);color:var(--red)">HIGH</span>
-      <span class="chevron">▼</span>
-    </div>
-    <div class="threat-body">
-      <div class="threat-inner">
-        <p style="color:var(--muted);font-size:.9rem;margin-bottom:16px">
-          Apps como Parallel Space criam um "Android virtual" dentro do processo deles.
-          Seu app roda como um processo filho com UID diferente, sem saber que está em um container.
-        </p>
-        <pre>
-<span class="cm">// Android aloca UIDs por usuário: blocos de 100.000</span>
-<span class="cm">// Usuário primário: 10000–99999</span>
-<span class="cm">// Perfil de trabalho / clone: 110000–199999</span>
-
-<span class="kw">val</span> userId = <span class="ty">Process</span>.<span class="fn">myUid</span>() / <span class="nu">100_000</span>
-<span class="kw">if</span> (userId != <span class="nu">0</span>) { <span class="cm">/* rodando em usuário secundário */</span> }
-
-<span class="cm">// dataDir também revela o clone:</span>
-<span class="cm">// Primário: /data/data/com.incognia.guardapp</span>
-<span class="cm">// Clone:    /data/user/10/com.incognia.guardapp  ← UID 10</span></pre>
-      </div>
-    </div>
-  </div>
-
-  <div class="threat-card">
-    <div class="threat-header" onclick="toggleThreat(this)">
-      <span class="icon">📦</span>
-      <h3>APK Repackaging — Distribuição Modificada</h3>
-      <span style="font-size:.75rem;padding:2px 8px;border-radius:12px;background:rgba(209,144,34,.2);color:var(--yellow)">MEDIUM</span>
-      <span class="chevron">▼</span>
-    </div>
-    <div class="threat-body">
-      <div class="threat-inner">
-        <p style="color:var(--muted);font-size:.9rem;margin-bottom:16px">
-          O atacante descompila o APK com <code>apktool</code>, remove as proteções de segurança do SDK,
-          recompila e redistribui. Precisa ressinar com uma chave diferente — geralmente o debug keystore padrão.
-        </p>
-        <pre>
-<span class="cm"># Processo de repackaging (15 minutos para um iniciante)</span>
+    <div class="threat-body"><div class="threat-inner">
+      <p style="color:var(--muted2);font-size:.9rem;margin-bottom:14px">
+        O atacante descompila o APK, remove detecções, recompila e redistribui.
+        Precisa ressinar com outra chave — geralmente o debug keystore padrão do Android
+        (<code>CN=Android Debug, O=Android, C=US</code>).
+      </p>
+      <pre>
+<span class="cm"># Processo completo em ~15 minutos:</span>
 apktool d app-release.apk -o decompiled/
-<span class="cm"># edita decompiled/smali/... remove chamadas ao SDK</span>
+<span class="cm"># edita smali — remove chamadas ao SDK Incognia</span>
 apktool b decompiled/ -o modified.apk
 jarsigner -keystore ~/.android/debug.keystore modified.apk androiddebugkey
 
-<span class="cm">// Nossa detecção: subject do certificado X.509</span>
-<span class="cm">// Debug key sempre: "CN=Android Debug, O=Android, C=US"</span></pre>
-      </div>
+<span class="cm">// Nossa detecção — subject do X.509:</span>
+<span class="kw">val</span> cert = <span class="ty">CertificateFactory</span>.<span class="fn">getInstance</span>(<span class="st">"X.509"</span>)
+    .<span class="fn">generateCertificate</span>(<span class="ty">ByteArrayInputStream</span>(sig.<span class="fn">toByteArray</span>())) <span class="kw">as</span> <span class="ty">X509Certificate</span>
+<span class="cm">// debug key tem sempre: "CN=Android Debug, O=Android, C=US"</span>
+<span class="kw">if</span> (cert.subjectDN.name.<span class="fn">contains</span>(<span class="st">"Android Debug"</span>)) { <span class="cm">/* MEDIUM signal */</span> }
+
+<span class="cm">// Em produção — SHA-256 da chave de release:</span>
+<span class="kw">const val</span> EXPECTED = <span class="st">"A1B2C3...sua chave aqui..."</span>
+<span class="kw">if</span> (sha256 != EXPECTED) { <span class="cm">/* HIGH signal */</span> }</pre>
+    </div></div>
+  </div>
+</section>
+<hr class="div">
+
+<!-- ═══════════════ FRIDA ═══════════════ -->
+<section id="frida">
+  <h2 class="sec-title fade-up"><span>🪝</span> Frida — Instrumentação Dinâmica</h2>
+  <p class="sec-sub fade-up">A ferramenta mais poderosa de análise de apps Android. Permite interceptar qualquer função em runtime sem modificar o APK.</p>
+
+  <div class="frida-canvas-wrap fade-up">
+    <canvas id="fridaCanvas"></canvas>
+    <div style="position:absolute;bottom:8px;right:12px;font-size:.72rem;color:var(--muted)">Animação: fluxo Frida atacando o SDK</div>
+  </div>
+
+  <div class="grid g2 fade-up" style="margin:20px 0">
+    <div class="card" style="border-color:var(--red)">
+      <h3>🔴 Como o Frida ataca</h3>
+      <p>1. <code>frida-server</code> roda como root na porta 27042<br>
+         2. Script JS via USB hookeia <code>generateReport()</code><br>
+         3. Substitui a implementação para retornar <code>SecurityReport(emptyList())</code><br>
+         4. O SDK acha que o dispositivo está limpo</p>
+    </div>
+    <div class="card" style="border-color:var(--green)">
+      <h3>🟢 Nossas 3 defesas</h3>
+      <p>1. <strong>Socket probe:</strong> tenta conectar em <code>127.0.0.1:27042</code> com timeout de 150ms<br>
+         2. <strong>/proc/net/tcp:</strong> procura porta em estado LISTEN<br>
+         3. <strong>/proc/self/maps:</strong> detecta <code>frida-agent.so</code> mapeado</p>
+    </div>
+  </div>
+
+  <pre class="fade-up">
+<span class="cm">// Script Frida que burlaria SDK sem proteção:</span>
+<span class="ty">Java</span>.<span class="fn">perform</span>(() => {
+  <span class="kw">const</span> Guard = <span class="ty">Java</span>.<span class="fn">use</span>(<span class="st">'com.incognia.guardapp.detection.EnvironmentGuard'</span>);
+<span class="hl">  Guard.generateReport.implementation = <span class="kw">async function</span>() {</span>
+<span class="hl">    <span class="kw">return</span> <span class="ty">Java</span>.<span class="fn">use</span>(<span class="st">'SecurityReport'</span>).<span class="fn">$new</span>(<span class="ty">Java</span>.<span class="fn">use</span>(<span class="st">'ArrayList'</span>).<span class="fn">$new</span>());</span>
+<span class="hl">  }; <span class="cm">// ← retorna sempre "limpo"</span></span>
+});
+
+<span class="cm">// Defesa 1: socket probe (executa ANTES do Frida hookar)</span>
+<span class="ty">Socket</span>().<span class="fn">use</span> { socket ->
+    socket.<span class="fn">connect</span>(<span class="ty">InetSocketAddress</span>(<span class="st">"127.0.0.1"</span>, <span class="nu">27042</span>), <span class="nu">150</span>)
+    <span class="cm">// conexão bem-sucedida = frida-server rodando → HIGH signal</span>
+}
+
+<span class="cm">// Defesa 3: /proc/self/maps — mesmo que a porta esteja bloqueada</span>
+<span class="cm">// "7f8a3000-7f8b0000 r-xp 00000000 fd:01 1234  /data/local/tmp/frida-agent-64.so"</span>
+<span class="ty">File</span>(<span class="st">"/proc/self/maps"</span>).<span class="fn">forEachLine</span> { line ->
+    <span class="kw">if</span> (line.<span class="fn">contains</span>(<span class="st">"frida"</span>, ignoreCase = <span class="kw">true</span>)) { <span class="cm">/* HIGH signal */</span> }
+}</pre>
+</section>
+<hr class="div">
+
+<!-- ═══════════════ TCP PARSER ═══════════════ -->
+<section id="tcp">
+  <h2 class="sec-title fade-up"><span>🔌</span> /proc/net/tcp — Decodificando o Kernel</h2>
+  <p class="sec-sub fade-up">O parser mais técnico do projeto. Entender o formato evita falsos positivos que derrubam a confiabilidade do SDK. <span style="color:var(--red)">Bug real encontrado nessa sessão: <code>0x699A ≠ 27042</code>.</span></p>
+
+  <div class="card fade-up" style="margin-bottom:20px;border-color:var(--orange)">
+    <h3>🐛 Bug real corrigido — porta hex errada</h3>
+    <p style="margin-top:8px">O código original usava <code>"699A"</code> = 27034 decimal. A porta do Frida é <strong>27042</strong> = <code>0x69A2</code>. O socket probe usava o valor correto; o parser de <code>/proc/net/tcp</code> estava silenciosamente procurando a porta errada. Os testes passavam porque testavam a lógica do parser, não a conversão numérica.</p>
+  </div>
+
+  <div class="decode-wrap fade-up">
+    <div style="font-size:.85rem;font-weight:700;margin-bottom:10px">
+      🔢 Decodificador interativo — clique nos bytes para entender o formato
+    </div>
+    <div style="margin-bottom:8px;font-size:.8rem;color:var(--muted2)">local_address = <code>0100007F:69A2</code> — IP + Porta</div>
+    <div>
+      <strong style="font-size:.8rem;color:var(--muted2)">IP (little-endian hex):</strong><br>
+      <span class="byte" onclick="decByte(this,'01','01 hex = 1 decimal → primeiro byte do IP = 127')" data-out="01 hex = 1 decimal → 4º octeto = 127">01</span>
+      <span class="byte" onclick="decByte(this,'00','00 hex = 0 decimal → segundo byte')" data-out="00 hex = 0 → 3º octeto = 0">00</span>
+      <span class="byte" onclick="decByte(this,'00','00 hex = 0 → terceiro byte')" data-out="00 hex = 0 → 2º octeto = 0">00</span>
+      <span class="byte" onclick="decByte(this,'7F','7F hex = 127 decimal → quarto byte do IP')" data-out="7F hex = 127 → 1º octeto = 127">7F</span>
+      <span style="color:var(--muted)"> : </span>
+      <strong style="font-size:.8rem;color:var(--muted2)">Porta (big-endian hex):</strong><br>
+      <span class="byte" onclick="decByte(this,'69','69 hex = 6×16 + 9 = 105 (high byte)')" data-out="69 hex = 0x69 = 105 → high byte">69</span>
+      <span class="byte" onclick="decByte(this,'A2','A2 hex = 10×16 + 2 = 162 (low byte) → porta = 0x69A2 = 27042')" data-out="A2 hex = 162 → low byte. Porta = 0x69A2 = 6×4096 + 9×256 + 10×16 + 2 = 27042 ✓">A2</span>
+    </div>
+    <div style="margin-top:12px;font-size:.8rem;color:var(--muted2)">Resultado:</div>
+    <div class="decode-result" id="decOut">Clique num byte para decodificar…</div>
+    <div style="margin-top:10px;font-size:.78rem;color:var(--muted)">
+      IP = little-endian (bytes invertidos): 01 00 00 7F → inverte → 7F 00 00 01 → 127.0.0.1<br>
+      Porta = big-endian (ordem normal): 69 A2 → 0x69A2 → 27042
+    </div>
+  </div>
+
+  <div class="tcp-wrap fade-up">
+    <div style="font-size:.85rem;font-weight:700;margin:16px 0 8px">Exemplo real de /proc/net/tcp — linha com Frida em LISTEN:</div>
+    <table class="tcp-tbl">
+      <tr>
+        <th>sl</th><th>local_address</th><th>rem_address</th><th>st</th><th>interpretação</th>
+      </tr>
+      <tr class="flagged">
+        <td>0:</td>
+        <td class="port">0100007F:<strong>69A2</strong></td>
+        <td>00000000:0000</td>
+        <td class="state">0A</td>
+        <td style="color:var(--red);font-size:.75rem">⚠️ 127.0.0.1:27042 em LISTEN = Frida server!</td>
+      </tr>
+      <tr>
+        <td>1:</td>
+        <td>0200007F:C350</td>
+        <td>0100007F:69A2</td>
+        <td class="ok">01</td>
+        <td style="color:var(--green);font-size:.75rem">✓ ESTABLISHED — não é listen, ignorar</td>
+      </tr>
+      <tr>
+        <td>2:</td>
+        <td>00000000:0050</td>
+        <td>00000000:0000</td>
+        <td class="state">0A</td>
+        <td style="color:var(--blue);font-size:.75rem">Port 80 em LISTEN — outro serviço, ignorar</td>
+      </tr>
+    </table>
+  </div>
+
+  <pre class="fade-up">
+<span class="cm">// Por que parts[1] e parts[3] (não contains na linha toda)?</span>
+<span class="cm">// → "69A2" pode aparecer no remote_address (parts[2]) em ESTABLISHED</span>
+<span class="cm">// → comparar na linha toda geraria falsos positivos</span>
+
+<span class="kw">internal fun</span> <span class="fn">parseTcpTable</span>(lines: <span class="ty">List</span>&lt;<span class="ty">String</span>&gt;, sourcePath: <span class="ty">String</span> = <span class="st">""</span>): <span class="ty">List</span>&lt;<span class="ty">DetectionSignal</span>&gt; {
+<span class="hl">    <span class="kw">val</span> fridaPortHex = <span class="st">"69A2"</span>  <span class="cm">// 27042 = 0x69A2  ← BUG CORRIGIDO nessa sessão</span></span>
+    <span class="kw">for</span> (line <span class="kw">in</span> lines) {
+        <span class="kw">val</span> parts = line.<span class="fn">trim</span>().<span class="fn">split</span>(<span class="st">" "</span>).<span class="fn">filter</span> { it.<span class="fn">isNotEmpty</span>() }
+        <span class="kw">if</span> (parts.size >= <span class="nu">4</span>) {
+<span class="hl">            <span class="kw">val</span> localPort = parts[<span class="nu">1</span>].<span class="fn">substringAfter</span>(<span class="st">":"</span>)  <span class="cm">// ← coluna LOCAL</span></span>
+<span class="hl">            <span class="kw">val</span> state = parts[<span class="nu">3</span>]                           <span class="cm">// ← coluna ESTADO</span></span>
+            <span class="kw">if</span> (localPort.<span class="fn">equals</span>(fridaPortHex, ignoreCase = <span class="kw">true</span>)
+                && state.<span class="fn">equals</span>(<span class="st">"0A"</span>, ignoreCase = <span class="kw">true</span>)) {
+                <span class="cm">// porta 27042 em LISTEN na interface LOCAL = Frida server</span>
+            }
+        }
+    }
+}</pre>
+</section>
+<hr class="div">
+
+<!-- ═══════════════ STEALTH ═══════════════ -->
+<section id="stealth">
+  <h2 class="sec-title fade-up"><span>🥷</span> Stealth — Ocultando Strings no APK</h2>
+  <p class="sec-sub fade-up">Um analista que tenta entender o SDK pela engenharia reversa não deve ver facilmente quais strings ele busca. O <code>charArrayOf</code> é a primeira camada de defesa.</p>
+
+  <div class="card fade-up" style="margin-bottom:20px;border-color:var(--purple)">
+    <h3>🔍 Como funciona a extração de strings</h3>
+    <p style="margin-top:8px">Ferramentas como <code>jadx</code>, <code>apktool</code> e até o comando <code>strings</code> extraem literais de string da seção <code>.rodata</code> do DEX. Strings literais no código Kotlin ficam armazenadas estaticamente no APK — qualquer pessoa consegue ver.</p>
+  </div>
+
+  <div class="stealth-wrap fade-up">
+    <div style="font-size:.85rem;font-weight:700;margin-bottom:12px">Comparação: o que aparece numa extração de strings do APK</div>
+    <div style="font-size:.82rem;color:var(--muted2);margin-bottom:8px">❌ String literal — aparece no APK:</div>
+    <pre style="margin:0 0 12px">
+<span class="kw">val</span> marker = <span class="st">"goldfish"</span>  <span class="cm">// → visível em: strings app.apk | grep goldfish</span></pre>
+    <div class="strings-scan">
+      <div class="str-item str-found">🔴 "goldfish" — ENCONTRADO por strings</div>
+      <div class="str-item str-found">🔴 "qemu" — ENCONTRADO</div>
+      <div class="str-item str-found">🔴 "genymotion" — ENCONTRADO</div>
+    </div>
+    <div style="font-size:.82rem;color:var(--muted2);margin:16px 0 8px">✅ charArrayOf — invisível no APK, reconstruído em runtime:</div>
+    <pre style="margin:0 0 12px">
+<span class="kw">val</span> goldfish = <span class="fn">charArrayOf</span>(<span class="st">'g'</span>,<span class="st">'o'</span>,<span class="st">'l'</span>,<span class="st">'d'</span>,<span class="st">'f'</span>,<span class="st">'i'</span>,<span class="st">'s'</span>,<span class="st">'h'</span>).<span class="fn">concatToString</span>()
+<span class="cm">// jadx vê: new char[]{'g','o','l','d','f','i','s','h'}</span>
+<span class="cm">// strings vê: nada — não há string literal "goldfish" no DEX</span></pre>
+    <div class="strings-scan">
+      <div class="str-item str-hidden">✅ "goldfish" — NÃO encontrado por strings</div>
+      <div class="str-item str-obfus">⚙️ char[]{'g','o','l'...} — jadx vê chars, não string</div>
+    </div>
+  </div>
+
+  <div class="grid g2 fade-up" style="margin-top:20px">
+    <div class="card">
+      <h3>🔒 R8 Full Mode (release)</h3>
+      <p>O build de release usa R8 em modo completo: renomeia classes para <code>a/b/c</code>, remove código morto, faz inline de métodos. Dificulta engenharia reversa sem precisar escrever código extra.</p>
+    </div>
+    <div class="card">
+      <h3>🔑 Próximo nível (produção)</h3>
+      <p>DexGuard (pago), criptografia de strings em runtime, anti-tamper via hash do próprio DEX, e JNI — lógica crítica em C/C++ que o Frida Java API não hookeia facilmente.</p>
     </div>
   </div>
 </section>
-<hr class="divider">
+<hr class="div">
 
-<!-- ═══════════════════════════════ FLOW ═══════════════════════════════ -->
+<!-- ═══════════════ FLOW ═══════════════ -->
 <section id="flow">
-  <h2><span class="icon">⚡</span> Fluxo Completo de Detecção</h2>
-  <p class="section-sub">Do launch do app até a decisão do servidor — passo a passo</p>
+  <h2 class="sec-title fade-up"><span>🔄</span> Fluxo Completo — Do Launch ao Servidor</h2>
+  <p class="sec-sub fade-up">8 passos do <code>onCreate()</code> até a decisão final. A decisão de bloquear fica no servidor — fora do alcance do Frida.</p>
 
-  <div class="flow">
-    <div class="flow-steps" id="flowSteps">
-      <div class="flow-step">
-        <div class="flow-num">1</div>
-        <div class="flow-content">
-          <h4>App inicia — MainActivity.onCreate()</h4>
-          <p>lifecycleScope.launch { } — chama EnvironmentGuard.create(this) na Main thread</p>
-        </div>
-      </div>
-      <div class="flow-connector"></div>
-      <div class="flow-step">
-        <div class="flow-num">2</div>
-        <div class="flow-content">
-          <h4>generateReport() — 5 coroutines em paralelo</h4>
-          <p>Cada analyzer recebe async(Dispatchers.Default) — I/O de /proc/* não bloqueia a UI</p>
-        </div>
-      </div>
-      <div class="flow-connector"></div>
-      <div class="flow-step">
-        <div class="flow-num">3</div>
-        <div class="flow-content">
-          <h4>Cada analyzer executa suas verificações</h4>
-          <p>EmulatorAnalyzer: Build.* + reflection + /proc/cpuinfo | RootDetector: su + props + writable | etc.</p>
-        </div>
-      </div>
-      <div class="flow-connector"></div>
-      <div class="flow-step">
-        <div class="flow-num">4</div>
-        <div class="flow-content">
-          <h4>runCatching isola crashes</h4>
-          <p>Se um analyzer lança exceção → getOrDefault(emptyList()) — os outros continuam normalmente</p>
-        </div>
-      </div>
-      <div class="flow-connector"></div>
-      <div class="flow-step">
-        <div class="flow-num">5</div>
-        <div class="flow-content">
-          <h4>awaitAll().flatten() agrega tudo</h4>
-          <p>List&lt;List&lt;DetectionSignal&gt;&gt; → List&lt;DetectionSignal&gt; — todos os signals numa lista plana</p>
-        </div>
-      </div>
-      <div class="flow-connector"></div>
-      <div class="flow-step">
-        <div class="flow-num">6</div>
-        <div class="flow-content">
-          <h4>SecurityReport criado</h4>
-          <p>isTampered = any { severity != LOW } | riskScore = Σ(HIGH×3 + MEDIUM×1)</p>
-        </div>
-      </div>
-      <div class="flow-connector"></div>
-      <div class="flow-step">
-        <div class="flow-num">7</div>
-        <div class="flow-content">
-          <h4>UI renderizada por severidade</h4>
-          <p>HIGH (vermelho) → MEDIUM (laranja) → LOW/INFO (azul) — agrupados e coloridos</p>
-        </div>
-      </div>
-      <div class="flow-connector"></div>
-      <div class="flow-step">
-        <div class="flow-num">8</div>
-        <div class="flow-content">
-          <h4>Servidor Incognia decide</h4>
-          <p>O SDK não bloqueia localmente — envia riskScore + signals para o servidor. Decisão fica no backend, fora do alcance do atacante.</p>
-        </div>
-      </div>
+  <div class="flow-wrap fade-up">
+    <div id="flowSteps">
+      <div class="step"><div class="step-num">1</div><div class="step-body"><h4>App inicia — MainActivity.onCreate()</h4><p>lifecycleScope.launch {} garante que a coroutine é cancelada se a Activity morrer. Não bloqueia a Main thread.</p></div></div>
+      <div class="step-conn"></div>
+      <div class="step"><div class="step-num">2</div><div class="step-body"><h4>EnvironmentGuard.create(this).generateReport()</h4><p>Factory garante applicationContext. generateReport() é suspend — pode ser chamada de qualquer coroutine.</p></div></div>
+      <div class="step-conn"></div>
+      <div class="step"><div class="step-num">3</div><div class="step-body"><h4>5 coroutines lançadas em paralelo com async{}</h4><p>Cada analyzer recebe Dispatchers.Default — thread pool separado. I/O de /proc não bloqueia a UI thread.</p></div></div>
+      <div class="step-conn"></div>
+      <div class="step"><div class="step-num">4</div><div class="step-body"><h4>runCatching isola falhas individuais</h4><p>SecurityException ao ler /proc/net/tcp? O analyzer retorna emptyList(). Os outros 4 continuam normalmente.</p></div></div>
+      <div class="step-conn"></div>
+      <div class="step"><div class="step-num">5</div><div class="step-body"><h4>awaitAll() — todos os 5 terminam</h4><p>Retorna List&lt;List&lt;DetectionSignal&gt;&gt;. O mais lento determina o tempo total — por isso paralelismo importa.</p></div></div>
+      <div class="step-conn"></div>
+      <div class="step"><div class="step-num">6</div><div class="step-body"><h4>flatten() → SecurityReport criado</h4><p>isTampered = any { severity ≠ LOW }. riskScore = Σ(HIGH×3 + MEDIUM×1). Imutável por design.</p></div></div>
+      <div class="step-conn"></div>
+      <div class="step"><div class="step-num">7</div><div class="step-body"><h4>runOnUiThread { renderReport() }</h4><p>Volta para a Main thread para atualizar a UI. HIGH (vermelho) → MEDIUM (laranja) → LOW (azul).</p></div></div>
+      <div class="step-conn"></div>
+      <div class="step"><div class="step-num">8</div><div class="step-body"><h4>riskScore enviado ao servidor Incognia</h4><p>O SDK não bloqueia localmente. A decisão (permitir/negar login) fica no backend — onde o atacante não pode usar Frida para alterar a resposta.</p></div></div>
     </div>
-    <button class="cp-btn" onclick="animateFlow()" style="margin-top:20px">▶ Animar Fluxo</button>
+    <button class="flow-btn" onclick="animFlow()">▶ Animar Fluxo</button>
+  </div>
+
+  <div class="risk-wrap fade-up" style="margin-top:24px">
+    <div style="font-weight:700;font-size:.88rem;margin-bottom:16px">Exemplo de riskScore num dispositivo rooteado com Frida</div>
+    <div id="scoreItems" style="font-size:.82rem;color:var(--muted2);margin-bottom:12px"></div>
+    <div class="risk-bar-wrap" style="height:28px"><div class="risk-bar" id="riskFinal"></div></div>
+    <div class="risk-score-big" id="scoreNum">0</div>
+    <button class="coro-btn" onclick="animScore()" style="background:var(--red)">▶ Calcular riskScore</button>
   </div>
 </section>
 
 <footer>
   GuardApp SDK — Incognia Technical Challenge &nbsp;|&nbsp;
   <a href="https://github.com/maktheus/silver-dollop-worktech">GitHub</a>
-  &nbsp;|&nbsp; Kotlin 2.0 · Android 15 · 47 testes
+  &nbsp;·&nbsp; Kotlin 2.0 · Android API 35 · 47 testes
 </footer>
 
 <script>
 // ── Reading progress ──────────────────────────────────────────────────────────
 window.addEventListener('scroll', () => {
-  const el = document.getElementById('progress');
-  const pct = window.scrollY / (document.documentElement.scrollHeight - window.innerHeight);
-  el.style.width = (pct * 100) + '%';
-
-  // Nav active
+  const pct = scrollY / (document.documentElement.scrollHeight - innerHeight);
+  document.getElementById('prog').style.width = (pct*100)+'%';
   document.querySelectorAll('nav a').forEach(a => {
-    const section = document.querySelector(a.getAttribute('href'));
-    if (!section) return;
-    const rect = section.getBoundingClientRect();
-    a.classList.toggle('active', rect.top <= 80 && rect.bottom > 80);
+    const t = document.querySelector(a.getAttribute('href'));
+    if (!t) return;
+    const r = t.getBoundingClientRect();
+    a.classList.toggle('on', r.top <= 60 && r.bottom > 60);
   });
 });
+
+// ── Fade-up observer ──────────────────────────────────────────────────────────
+const obs = new IntersectionObserver(es => {
+  es.forEach(e => { if (e.isIntersecting) e.target.classList.add('vis'); });
+}, {threshold:.12});
+document.querySelectorAll('.fade-up').forEach(el => obs.observe(el));
+
+// ── Hero canvas — particle web ─────────────────────────────────────────────
+const hc = document.getElementById('heroCanvas');
+const hx = hc.getContext('2d');
+let pts = [];
+function resize() { hc.width=innerWidth; hc.height=innerHeight; }
+resize(); window.addEventListener('resize', resize);
+for (let i=0; i<80; i++) pts.push({
+  x:Math.random()*innerWidth, y:Math.random()*innerHeight,
+  vx:(Math.random()-.5)*.4, vy:(Math.random()-.5)*.4
+});
+function heroLoop() {
+  hx.clearRect(0,0,hc.width,hc.height);
+  pts.forEach(p => {
+    p.x+=p.vx; p.y+=p.vy;
+    if (p.x<0||p.x>hc.width) p.vx*=-1;
+    if (p.y<0||p.y>hc.height) p.vy*=-1;
+    hx.beginPath(); hx.arc(p.x,p.y,1.5,0,Math.PI*2);
+    hx.fillStyle='rgba(96,165,250,.5)'; hx.fill();
+  });
+  pts.forEach((a,i) => pts.slice(i+1).forEach(b => {
+    const d=Math.hypot(a.x-b.x,a.y-b.y);
+    if (d<120) {
+      hx.beginPath(); hx.moveTo(a.x,a.y); hx.lineTo(b.x,b.y);
+      hx.strokeStyle=`rgba(96,165,250,${.15*(1-d/120)})`; hx.stroke();
+    }
+  }));
+  requestAnimationFrame(heroLoop);
+}
+heroLoop();
+
+// ── Frida canvas animation ────────────────────────────────────────────────────
+const fc = document.getElementById('fridaCanvas');
+const fx = fc.getContext('2d');
+const fridaObs = new IntersectionObserver(es => {
+  if (es[0].isIntersecting) { startFrida(); fridaObs.disconnect(); }
+}, {threshold:.3});
+fridaObs.observe(fc);
+let packets=[], fridaRunning=false;
+function startFrida() {
+  fridaRunning=true;
+  fc.width=fc.offsetWidth; fc.height=fc.offsetHeight;
+  fridaLoop();
+}
+function fridaLoop() {
+  if (!fridaRunning) return;
+  fx.clearRect(0,0,fc.width,fc.height);
+  const w=fc.width, h=fc.height;
+  // Labels
+  fx.font='12px monospace'; fx.fillStyle='#64748b';
+  fx.fillText('Máquina do atacante',8,20);
+  fx.fillText('frida-server (porta 27042)',w*.42,20);
+  fx.fillText('app.analyze()',w*.78,20);
+  // Boxes
+  function box(x,y,bw,bh,color,label) {
+    fx.strokeStyle=color; fx.lineWidth=1.5;
+    fx.strokeRect(x,y,bw,bh);
+    fx.fillStyle=color+'22'; fx.fillRect(x,y,bw,bh);
+    fx.fillStyle=color; fx.font='bold 11px monospace';
+    fx.fillText(label,x+8,y+18);
+  }
+  box(4,28,130,60,'#3b82f6','Python/JS Script');
+  box(w*.38,28,160,60,'#ef4444','frida-server (root)');
+  box(w*.76,28,fc.width-w*.76-4,60,'#8b5cf6','GuardApp process');
+  // Animated packets
+  if (Math.random()<.04) {
+    packets.push({x:134,y:58,tx:w*.38,color:'#3b82f6',label:'hook cmd',speed:1.8});
+  }
+  if (Math.random()<.04) {
+    packets.push({x:w*.38+160,y:58,tx:w*.76,color:'#ef4444',label:'inject .so',speed:1.4});
+  }
+  packets.forEach((p,i) => {
+    p.x += (p.tx-p.x)*.06;
+    if (Math.abs(p.x-p.tx)<4) { packets.splice(i,1); return; }
+    fx.beginPath(); fx.arc(p.x,p.y,5,0,Math.PI*2);
+    fx.fillStyle=p.color; fx.fill();
+    fx.fillStyle=p.color; fx.font='10px monospace';
+    fx.fillText(p.label,p.x-20,p.y-10);
+  });
+  requestAnimationFrame(fridaLoop);
+}
 
 // ── Classpath search ──────────────────────────────────────────────────────────
-const classMap = {
-  'com.incognia.guardapp.detection.EnvironmentGuard': { shelf: 'Prateleira 1 — seu app', found: true },
-  'com.incognia.guardapp.detection.SecurityReport':   { shelf: 'Prateleira 1 — seu app', found: true },
-  'com.incognia.guardapp.detection.DetectionSignal':  { shelf: 'Prateleira 1 — seu app', found: true },
-  'kotlinx.coroutines.Deferred':                      { shelf: 'Prateleira 2 — dependências', found: true },
-  'okhttp3.OkHttpClient':                             { shelf: 'Prateleira 2 — dependências', found: true },
-  'android.content.Context':                          { shelf: 'Prateleira 3 — Android SDK', found: true },
-  'android.os.Build':                                 { shelf: 'Prateleira 3 — Android SDK', found: true },
-  'de.robv.android.xposed.XposedBridge':              { shelf: 'Xposed injeta aqui', found: true, injected: true },
-  'de.robv.android.xposed.XposedHelpers':             { shelf: 'Xposed injeta aqui', found: true, injected: true },
+const classDb = {
+  'com.incognia.guardapp.detection.EnvironmentGuard':{'shelf':'Prateleira 1 — seu app','xposed':false},
+  'com.incognia.guardapp.detection.SecurityReport':{'shelf':'Prateleira 1 — seu app','xposed':false},
+  'com.incognia.guardapp.detection.DetectionSignal':{'shelf':'Prateleira 1 — seu app','xposed':false},
+  'com.incognia.guardapp.detection.analyzers.RootDetector':{'shelf':'Prateleira 1 — seu app','xposed':false},
+  'kotlinx.coroutines.Deferred':{'shelf':'Prateleira 2 — dependências','xposed':false},
+  'kotlinx.coroutines.async':{'shelf':'Prateleira 2 — dependências','xposed':false},
+  'io.mockk.MockK':{'shelf':'Prateleira 2 — dependências','xposed':false},
+  'android.content.Context':{'shelf':'Prateleira 3 — Android SDK','xposed':false},
+  'android.os.Build':{'shelf':'Prateleira 3 — Android SDK','xposed':false},
+  'android.content.pm.PackageManager':{'shelf':'Prateleira 3 — Android SDK','xposed':false},
+  'de.robv.android.xposed.XposedBridge':{'shelf':'Xposed (injetado pelo framework!)','xposed':true},
+  'de.robv.android.xposed.XposedHelpers':{'shelf':'Xposed (injetado pelo framework!)','xposed':true},
 };
-
-function searchClass() {
-  const input = document.getElementById('cpInput').value.trim();
-  const result = document.getElementById('cpResult');
-  const info = classMap[input];
-
-  document.querySelectorAll('.shelf-item').forEach(el => {
-    el.classList.remove('found', 'not-found');
-  });
-
-  if (info && info.found) {
-    result.className = 'cp-result ok vis';
-    const msg = info.injected
-      ? `⚠️ Classe encontrada na prateleira "${info.shelf}" — injetada pelo Xposed! Sinal HIGH gerado.`
-      : `✓ Classe encontrada na prateleira "${info.shelf}"`;
-    result.textContent = msg;
-    document.querySelectorAll('.shelf-item').forEach(el => {
-      if (el.dataset.class === input) el.classList.add('found');
+function searchCp() {
+  const q = document.getElementById('cpIn').value.trim();
+  const res = document.getElementById('cpRes');
+  document.querySelectorAll('.book').forEach(b => b.classList.remove('hit','miss'));
+  const info = classDb[q];
+  if (info) {
+    res.className = 'cp-result '+(info.xposed?'cp-err':'cp-ok');
+    res.style.display='block';
+    res.textContent = info.xposed
+      ? `⚠️ ALERTA: "${q}" encontrada em "${info.shelf}" — Xposed está injetado! Sinal HIGH gerado.`
+      : `✓ Classe encontrada em "${info.shelf}"`;
+    document.querySelectorAll('.book').forEach(b => {
+      if (b.dataset.cls===q) b.classList.add('hit');
     });
-  } else if (input) {
-    result.className = 'cp-result err vis';
-    result.textContent = `✗ ClassNotFoundException: "${input}" não encontrada em nenhuma prateleira do classpath`;
+  } else if (q) {
+    res.className='cp-result cp-err'; res.style.display='block';
+    res.textContent=`✗ ClassNotFoundException: "${q}" não existe em nenhuma prateleira do classpath`;
   }
 }
+document.getElementById('cpIn').addEventListener('keyup', e => { if(e.key==='Enter') searchCp(); });
 
-document.getElementById('cpInput').addEventListener('keyup', e => {
-  if (e.key === 'Enter') searchClass();
-});
+// ── Accordion ─────────────────────────────────────────────────────────────────
+function tog(head) { head.closest('.acc').classList.toggle('open'); }
+function togT(head) {
+  const t = head.closest('.threat');
+  t.classList.toggle('open');
+  head.querySelector('.ch').style.transform = t.classList.contains('open') ? 'rotate(180deg)':'';
+}
+function goTo(id) { document.getElementById(id)?.scrollIntoView({behavior:'smooth',block:'start'}); }
 
-// ── Class accordion ───────────────────────────────────────────────────────────
-function toggleClass(header) {
-  const card = header.closest('.class-detail');
-  const wasOpen = card.classList.contains('open');
-  card.classList.toggle('open', !wasOpen);
-  // animate risk bars when signal class opens
-  if (!wasOpen && card.id === 'class-signal') animateRiskBars();
+// ── Risk bars ─────────────────────────────────────────────────────────────────
+function animRisk() {
+  document.getElementById('rLow').style.cssText='width:0%;transition:width 1s';
+  document.getElementById('rMed').style.cssText='width:33%;transition:width 1s';
+  document.getElementById('rHigh').style.cssText='width:100%;transition:width 1.2s';
 }
 
-function animateRiskBars() {
-  setTimeout(() => { document.getElementById('lowBar').style.width  = '0%'; }, 100);
-  setTimeout(() => { document.getElementById('medBar').style.width  = '33%'; }, 200);
-  setTimeout(() => { document.getElementById('highBar').style.width = '100%'; }, 300);
-}
-
-// ── Threat accordion ──────────────────────────────────────────────────────────
-function toggleThreat(header) {
-  const card = header.closest('.threat-card');
-  card.classList.toggle('open');
-}
-
-// ── Arch jump ─────────────────────────────────────────────────────────────────
-function jumpToClass(id) {
-  const map = {
-    emulator: 'class-emulator', root: 'class-root',
-    clone: 'class-clone', virt: 'class-virt', sig: 'class-sig'
-  };
-  const el = document.getElementById(map[id]);
-  if (!el) return;
-  el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  setTimeout(() => {
-    if (!el.classList.contains('open')) {
-      el.querySelector('.class-header').click();
-    }
-  }, 600);
+// ── Coroutine simulation ──────────────────────────────────────────────────────
+const coroData = [
+  {id:'l1',r:'r1',dur:1600,pct:82,result:'8 signals'},
+  {id:'l2',r:'r2',dur:2100,pct:95,result:'3 signals'},
+  {id:'l3',r:'r3',dur:800, pct:45,result:'0 signals'},
+  {id:'l4',r:'r4',dur:1900,pct:88,result:'2 signals'},
+  {id:'l5',r:'r5',dur:1100,pct:60,result:'1 signal'},
+];
+function animCoro() {
+  coroData.forEach(c => {
+    const bar=document.getElementById(c.id), res=document.getElementById(c.r);
+    bar.style.cssText=`width:0;transition:none;background:${bar.style.background}`;
+    res.classList.remove('show');
+    setTimeout(()=>{
+      bar.style.transition=`width ${c.dur}ms linear`;
+      bar.style.width=c.pct+'%';
+      setTimeout(()=>res.classList.add('show'), c.dur);
+    },60);
+  });
+  const max=Math.max(...coroData.map(c=>c.dur));
+  document.getElementById('coroStatus').textContent='Executando…';
+  setTimeout(()=>{
+    document.getElementById('coroStatus').textContent=
+      '✅ Concluído! Todos os analyzers terminaram. awaitAll().flatten() → SecurityReport criado.';
+  }, max+200);
 }
 
 // ── Flow animation ────────────────────────────────────────────────────────────
-function animateFlow() {
-  const steps = document.querySelectorAll('.flow-step');
-  steps.forEach(s => s.classList.remove('visible'));
-  steps.forEach((s, i) => setTimeout(() => s.classList.add('visible'), i * 280));
+function animFlow() {
+  const steps=document.querySelectorAll('#flowSteps .step');
+  steps.forEach(s=>s.classList.remove('vis'));
+  steps.forEach((s,i)=>setTimeout(()=>s.classList.add('vis'),i*260));
+}
+const flowEl=document.getElementById('flowSteps');
+const flowObs=new IntersectionObserver(es=>{if(es[0].isIntersecting){animFlow();flowObs.disconnect();}},{threshold:.15});
+flowObs.observe(flowEl);
+
+// ── Risk score animation ──────────────────────────────────────────────────────
+const riskItems=[
+  {label:'Root binary found: /system/bin/su',sev:'HIGH',pts:3},
+  {label:'System property [ro.debuggable=1]',sev:'HIGH',pts:3},
+  {label:'Root management app: com.topjohnwu.magisk',sev:'HIGH',pts:3},
+  {label:'Frida server responding on localhost:27042',sev:'HIGH',pts:3},
+  {label:'/proc/net/tcp: porta 27042 em LISTEN',sev:'MEDIUM',pts:1},
+  {label:'App signed with Android debug key',sev:'MEDIUM',pts:1},
+];
+function animScore() {
+  const el=document.getElementById('scoreItems');
+  const bar=document.getElementById('riskFinal');
+  const num=document.getElementById('scoreNum');
+  el.innerHTML=''; bar.style.width='0'; num.textContent='0';
+  let total=0, maxScore=14;
+  riskItems.forEach((item,i)=>{
+    setTimeout(()=>{
+      total+=item.pts;
+      const color=item.sev==='HIGH'?'var(--red)':'var(--yellow)';
+      el.innerHTML+=`<div style="margin:3px 0;color:${color}">+${item.pts} ${item.sev}: ${item.label}</div>`;
+      bar.style.width=Math.min(100,(total/maxScore)*100)+'%';
+      bar.style.transition='width .5s';
+      num.textContent=total;
+      num.style.color=total>=6?'var(--red)':total>=3?'var(--yellow)':'var(--green)';
+    },i*400);
+  });
 }
 
-// Auto-start flow when scrolled into view
-const flowObs = new IntersectionObserver(entries => {
-  if (entries[0].isIntersecting) { animateFlow(); flowObs.disconnect(); }
-}, { threshold: .2 });
-const flowEl = document.getElementById('flowSteps');
-if (flowEl) flowObs.observe(flowEl);
+// ── Byte decoder ──────────────────────────────────────────────────────────────
+function decByte(el, hex, msg) {
+  document.querySelectorAll('.byte').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('decOut').textContent = el.dataset.out || msg;
+}
 
 // ── Auto-open first threat ────────────────────────────────────────────────────
-setTimeout(() => {
-  const ft = document.getElementById('threat-frida');
-  if (ft) ft.classList.add('open');
-}, 800);
+setTimeout(()=>{
+  const t=document.querySelector('.threat');
+  if(t){t.classList.add('open');t.querySelector('.ch').style.transform='rotate(180deg)';}
+},600);
 </script>
 </body>
 </html>
