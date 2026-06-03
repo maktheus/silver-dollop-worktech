@@ -138,8 +138,8 @@ class VirtualizationAnalyzer : EnvironmentAnalyzer {
      * without touching the real filesystem.
      */
     internal fun parseTcpTable(lines: List<String>, sourcePath: String = ""): List<DetectionSignal> {
-        // 27042 = 0x699A
-        val fridaPortHex = "699A"
+        // 27042 = 0x69A2 (hardcoded to avoid constant-inlining edge cases in internal fun)
+        val fridaPortHex = "69A2"
         val signals = mutableListOf<DetectionSignal>()
         for (line in lines) {
             val parts = line.trim().split(" ").filter { it.isNotEmpty() }
