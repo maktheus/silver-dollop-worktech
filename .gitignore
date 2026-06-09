@@ -17,3 +17,7 @@ local.properties
 # Generated APKs and bundles
 *.apk
 *.aab
+docs/guardapp.aux
+docs/guardapp.log
+docs/guardapp.out
+docs/guardapp.toc
