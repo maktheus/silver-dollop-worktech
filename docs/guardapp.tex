@@ -1197,4 +1197,223 @@ Bayesian probability & Thomas Bayes, 1763 & \texttt{emulatorProbability} \\
 Ela usa as limitacoes estruturais que os atacantes nao conseguem esconder.''}
 \end{center}
 
+
+\newpage
+
+% ─── ROTEIRO DE APRESENTACAO ─────────────────────────────────────────────────
+\section{Roteiro de Apresentacao}
+
+\begin{mdframed}[backgroundcolor=codebg, linecolor=codeframe, linewidth=1pt,
+  innerleftmargin=14pt, innerrightmargin=14pt, innertopmargin=10pt, innerbottommargin=10pt]
+{\small\textit{Legenda: \textbf{[FALAR]} = o que dizer em voz alta.
+\textbf{[MOSTRAR]} = arquivo ou funcao para abrir no IDE.
+\textbf{[DURAÇÃO]} = tempo estimado de cada bloco.}}
+\end{mdframed}
+
+\vspace{0.5cm}
+
+% ── ABERTURA ─────────────────────────────────────────────────────────────────
+\subsection*{1. Abertura (1 minuto)}
+
+\textbf{[FALAR]}
+
+\begin{quote}
+``Antes de mostrar o codigo, deixa eu contextualizar o problema que o projeto resolve.
+Aplicacoes financeiras precisam saber se estao rodando num dispositivo legitimo ---
+ou dentro de um ambiente controlado por um atacante.
+Emuladores, apps de clone, ferramentas de hooking como Frida e Xposed, e APKs
+reempacotados sao os vetores mais comuns de fraude mobile hoje.
+\textit{Portanto}, o GuardApp e um SDK Android que detecta esses ambientes
+em tempo de execucao, sem depender de servidor externo.''
+\end{quote}
+
+\vspace{0.3cm}
+
+% ── ARQUITETURA ──────────────────────────────────────────────────────────────
+\subsection*{2. Arquitetura Geral (2 minutos)}
+
+\textbf{[MOSTRAR]} \texttt{EnvironmentGuard.kt}
+
+\textbf{[FALAR]}
+
+\begin{quote}
+``\textit{Para comecar}, a decisao de design mais importante do projeto esta aqui,
+nessa unica interface de 3 linhas ---
+\texttt{EnvironmentAnalyzer} define o contrato que todo detector deve seguir.
+\textit{A partir disso}, o \texttt{EnvironmentGuard} orquestra todos os analisadores
+em paralelo usando coroutines Kotlin ---
+cada um roda no \texttt{Dispatchers.Default} simultaneamente,
+e qualquer falha individual e capturada silenciosamente com \texttt{runCatching}.
+\textit{Dessa forma}, um analisador que crasha nao derruba o relatorio inteiro.
+\textit{Alem disso}, adicionar um novo detector no futuro e apenas instanciar
+uma nova classe na lista --- nenhuma outra classe precisa mudar.''
+\end{quote}
+
+\vspace{0.3cm}
+
+% ── EMULADOR ─────────────────────────────────────────────────────────────────
+\subsection*{3. EmulatorAnalyzer --- Detectando AVD e QEMU (2 minutos)}
+
+\textbf{[MOSTRAR]} \texttt{EmulatorAnalyzer.kt} $\to$ \texttt{checkBuildProperties()} e \texttt{checkCpuInfo()}
+
+\textbf{[FALAR]}
+
+\begin{quote}
+``\textit{Comecando pelo} detector de emulador, ele usa quatro camadas independentes.
+\textit{Primeiro}, verifica as propriedades do \texttt{android.os.Build} ---
+valores como \texttt{Build.HARDWARE = "goldfish"} ou \texttt{Build.FINGERPRINT}
+comecando com \texttt{"generic"} so existem no emulador oficial do Android,
+o AVD, que usa o QEMU criado por Fabrice Bellard em 2003.
+\textit{Em seguida}, acessa propriedades internas do sistema via Reflection ---
+como \texttt{ro.kernel.qemu=1} --- que nao estao no SDK publico mas
+o kernel do emulador seta automaticamente.
+\textit{Por fim}, tem um detalhe tecnico que vale mencionar:
+a string \texttt{"goldfish"} nunca aparece como literal no APK compilado ---
+ela e construida em runtime a partir de um \texttt{charArrayOf}.
+\textit{Isso porque} qualquer um pode rodar \texttt{strings app.apk | grep goldfish}
+e descobrir exatamente o que o app esta checando.
+Construir em runtime impede extracao estatica.''
+\end{quote}
+
+\vspace{0.3cm}
+
+% ── CLONE ────────────────────────────────────────────────────────────────────
+\subsection*{4. CloneAnalyzer --- Detectando VirtualApp e Parallel Space (2 minutos)}
+
+\textbf{[MOSTRAR]} \texttt{CloneAnalyzer.kt} $\to$ \texttt{checkSecondaryUserEnvironment()}
+
+\textbf{[FALAR]}
+
+\begin{quote}
+``\textit{Passando para} o detector de clone apps, esse e o mais elegante do projeto.
+\textit{Para entender}, preciso dar um contexto historico rapido:
+em 2015, um estudante chines chamado Lody criou o VirtualApp ---
+um framework que cria um Android dentro do Android interceptando chamadas Binder,
+que e o protocolo IPC do Android criado pela Dianne Hackborn.
+\textit{Consequentemente}, surgiu o Parallel Space e dezenas de similares,
+usados em fraudes bancarias a partir de 2017.
+\textit{A deteccao mais confiavel aqui} e o offset de UID:
+o Android aloca UIDs em blocos de 100.000 por usuario desde 2012,
+decisao de engenharia feita para tablets de familia.
+\textit{Portanto}, qualquer app rodando em clone tera
+\texttt{myUid() / 100.000 != 0} --- impossivel de falsificar sem root.
+\textit{Alem disso}, o detector verifica o \texttt{/proc/self/maps}:
+mesmo que o atacante renomeie o APK clone com apktool,
+as bibliotecas \texttt{.so} compiladas tem os paths originais baked-in pelo linker ---
+o kernel nao mente sobre o que esta carregado na memoria.''
+\end{quote}
+
+\vspace{0.3cm}
+
+% ── VIRTUALIZATION ────────────────────────────────────────────────────────────
+\subsection*{5. VirtualizationAnalyzer --- Detectando Frida e Xposed (3 minutos)}
+
+\textbf{[MOSTRAR]} \texttt{VirtualizationAnalyzer.kt} $\to$ \texttt{checkXposedClassLoader()} e \texttt{parseTcpTable()}
+
+\textbf{[FALAR]}
+
+\begin{quote}
+``\textit{Esse e o analisador mais complexo}, e tambem onde encontramos
+e corrigimos um bug real durante o desenvolvimento.
+\textit{Comecando pelo} Xposed: rovo89, desenvolvedor alemao, em 2012
+substituiu o \texttt{app\_process} --- o binario que inicia todo app Android ---
+por uma versao que injeta o \texttt{XposedBridge.jar} no classpath do Zygote.
+\textit{Como resultado}, toda classe do Xposed fica acessivel em qualquer processo.
+\textit{Portanto}, a deteccao e simples: se \texttt{Class.forName()} encontra
+\texttt{"de.robv.android.xposed.XposedBridge"} sem lancar
+\texttt{ClassNotFoundException}, o framework esta ativo.
+
+\textit{Para o Frida}, criado pelo noruegues Ole Andre em 2014,
+a deteccao usa duas estrategias.
+\textit{Primeiro}, probe de socket na porta 27042 com timeout de 150ms.
+\textit{Caso isso falhe}, um fallback que le \texttt{/proc/net/tcp}
+procurando a porta em estado \texttt{TCP\_LISTEN}.
+
+\textit{E aqui entra o bug que encontramos}:
+o codigo original usava \texttt{"699A"}, que e 27034 decimal.
+\textit{Porem}, a porta do Frida e 27042, que em hex e \texttt{0x69A2}.
+\textit{Por consequencia}, o fallback inteiro era cego --- procurava
+a porta errada silenciosamente, sem excecao, sem aviso nos logs.
+Os testes passavam porque testavam a logica do parser
+com linhas sinteticas, nao a conversao do numero em si.''
+\end{quote}
+
+\vspace{0.3cm}
+
+% ── ROOT ─────────────────────────────────────────────────────────────────────
+\subsection*{6. RootDetector --- Detectando Root e Magisk (1 minuto)}
+
+\textbf{[MOSTRAR]} \texttt{RootDetector.kt} $\to$ construtor com lambdas injetaveis
+
+\textbf{[FALAR]}
+
+\begin{quote}
+``\textit{O detector de root usa quatro estrategias} complementares:
+binarios \texttt{su} em paths conhecidos, apps de gerenciamento como Magisk,
+propriedades de sistema como \texttt{ro.debuggable=1} e \texttt{ro.secure=0},
+e verificacao se \texttt{/system} esta montado com escrita.
+\textit{O detalhe arquitetural importante aqui} e o construtor com lambdas injetaveis.
+\textit{Isso permite} testar cada verificacao sem precisar de device fisico rootado ---
+o teste passa uma lambda que simula o sistema de arquivos e o
+\texttt{PackageManager} retornando os valores desejados.
+\textit{Esse padrao} foi formalizado por Michael Feathers em 2004
+e e a base de todos os testes unitarios do projeto.''
+\end{quote}
+
+\vspace{0.3cm}
+
+% ── SIGNATURE ────────────────────────────────────────────────────────────────
+\subsection*{7. SignatureAnalyzer --- Verificando Integridade do APK (1 minuto)}
+
+\textbf{[MOSTRAR]} \texttt{SignatureAnalyzer.kt} $\to$ \texttt{checkCertificate()}
+
+\textbf{[FALAR]}
+
+\begin{quote}
+``\textit{Por fim}, o detector de integridade do APK.
+\textit{Quando um atacante} pega o APK, modifica com \texttt{apktool}
+e reassina com a debug key propria, o certificado X.509 vai ter
+\texttt{CN=Android Debug} no subject.
+\textit{Alem disso}, o SHA-256 do certificado vai ser diferente do esperado.
+\textit{Para producao}, basta configurar \texttt{EXPECTED\_CERT\_SHA256}
+com o hash do certificado de release --- qualquer APK reempacotado
+vai ter hash diferente e sera detectado com \texttt{Severity.HIGH}.
+\textit{Complementarmente}, o analisador verifica o instalador do app:
+se nao veio da Play Store ou de uma loja reconhecida,
+e um sinal de distribuicao fora dos canais oficiais.''
+\end{quote}
+
+\vspace{0.3cm}
+
+% ── ENCERRAMENTO ─────────────────────────────────────────────────────────────
+\subsection*{8. Encerramento (1 minuto)}
+
+\textbf{[FALAR]}
+
+\begin{quote}
+``\textit{Para resumir}, o projeto detecta cinco vetores de ataque ---
+emulador, clone app, hooking, root e reempacotamento ---
+usando uma arquitetura extensivel onde cada detector e independente
+e roda em paralelo via coroutines.
+\textit{Alem do codigo em si}, encontramos e corrigimos um bug real
+de producao durante o desenvolvimento: o port hex do Frida estava errado
+e o fallback era completamente ineficaz.
+\textit{Do ponto de vista tecnico}, cada decisao de design tem uma justificativa ---
+desde o \texttt{charArrayOf} para evasao de analise estatica
+ate o padrao de injecao de dependencia para testabilidade sem device.
+\textit{Estou a disposicao para perguntas sobre qualquer parte do projeto.}''
+\end{quote}
+
+\vspace{0.5cm}
+
+\begin{mdframed}[backgroundcolor=histbg, linecolor=histframe, linewidth=1.5pt,
+  innerleftmargin=14pt, innerrightmargin=14pt, innertopmargin=10pt, innerbottommargin=10pt]
+\textbf{Tempo total estimado: 13 minutos.}
+Deixe 5-7 minutos para perguntas.
+Pontos que costumam gerar mais interesse: o bug do port hex,
+o charArrayOf, e o UID offset de 100.000.
+Se pedirem para mostrar um teste, abra \texttt{VirtualizationAnalyzerTest.kt}
+ou \texttt{RootDetectorTest.kt} --- os mais didaticos.
+\end{mdframed}
+
 \end{document}
