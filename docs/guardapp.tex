@@ -1,0 +1,1200 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[brazil]{babel}
+\usepackage{geometry}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{titlesec}
+\usepackage{parskip}
+\usepackage{fancyhdr}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{mdframed}
+\usepackage{amssymb}
+
+\geometry{margin=2.5cm}
+
+% Colors
+\definecolor{codebg}{rgb}{0.95,0.95,0.97}
+\definecolor{codeframe}{rgb}{0.7,0.7,0.8}
+\definecolor{keyword}{rgb}{0.13,0.29,0.53}
+\definecolor{string}{rgb}{0.16,0.52,0.16}
+\definecolor{comment}{rgb}{0.5,0.5,0.5}
+\definecolor{histbg}{rgb}{0.98,0.96,0.88}
+\definecolor{histframe}{rgb}{0.85,0.75,0.4}
+\definecolor{titlebg}{rgb}{0.13,0.29,0.53}
+
+% Code style
+\lstdefinestyle{kotlin}{
+  backgroundcolor=\color{codebg},
+  frame=single,
+  rulecolor=\color{codeframe},
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{keyword}\bfseries,
+  stringstyle=\color{string},
+  commentstyle=\color{comment}\itshape,
+  breaklines=true,
+  breakatwhitespace=true,
+  tabsize=4,
+  showstringspaces=false,
+  numbers=left,
+  numberstyle=\tiny\color{comment},
+  xleftmargin=1.5em,
+  framexleftmargin=1.5em,
+}
+\lstset{style=kotlin}
+
+% History box
+\newmdenv[
+  backgroundcolor=histbg,
+  linecolor=histframe,
+  linewidth=1.5pt,
+  leftmargin=0,
+  rightmargin=0,
+  innerleftmargin=12pt,
+  innerrightmargin=12pt,
+  innertopmargin=8pt,
+  innerbottommargin=8pt,
+]{historybox}
+
+% Header/Footer
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{\textcolor{comment}{\small GuardApp — Documentação Técnica}}
+\lhead{\textcolor{comment}{\small Incognia Technical Challenge}}
+\rfoot{\thepage}
+
+% Title formatting
+\titleformat{\section}{\Large\bfseries\color{titlebg}}{}{0em}{}[\titlerule]
+\titleformat{\subsection}{\large\bfseries\color{keyword}}{}{0em}{}
+\titleformat{\subsubsection}{\normalsize\bfseries}{}{0em}{}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=keyword,
+  urlcolor=keyword,
+}
+
+\begin{document}
+
+% ─── CAPA ────────────────────────────────────────────────────────────────────
+\begin{titlepage}
+  \centering
+  \vspace*{2cm}
+  {\Huge\bfseries\color{titlebg} GuardApp}\\[0.5cm]
+  {\Large Android Environment Detection SDK}\\[0.3cm]
+  {\large\color{comment} Documentação Técnica com Contexto Histórico}\\[2cm]
+  \rule{\textwidth}{1pt}\\[0.5cm]
+  {\normalsize
+    \textbf{Projeto:} Incognia Technical Challenge\\[0.3cm]
+    \textbf{Propósito:} Detecção de ambientes adulterados em Android\\[0.3cm]
+    \textbf{Linguagem:} Kotlin / Android SDK\\[0.3cm]
+    \textbf{Cobertura:} Emulador, Root, Clone App, Hooking, Reempacotamento
+  }\\[2cm]
+  \rule{\textwidth}{1pt}\\[1cm]
+  {\small\color{comment}
+    Cada classe, função e decisão de design é explicada junto\\
+    com a história que motivou sua existência.
+  }
+  \vfill
+  {\small 2024}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+% ─── VISÃO GERAL ─────────────────────────────────────────────────────────────
+\section{Visão Geral da Arquitetura}
+
+O GuardApp é um SDK Android que detecta ambientes adulterados em tempo de execução.
+Responde a uma pergunta crítica para aplicações financeiras e de segurança:
+
+\begin{center}
+\textit{``Este app está rodando num dispositivo legítimo, ou em ambiente controlado por um atacante?''}
+\end{center}
+
+\subsection{Estrutura de Pacotes}
+
+\begin{lstlisting}
+com.incognia.guardapp
+  detection/
+    EnvironmentAnalyzer.kt    # contrato (interface)
+    DetectionSignal.kt        # tipos de dados
+    SecurityReport.kt         # resultado final
+    EnvironmentGuard.kt       # orquestrador (facade)
+    DetectionSignatures.kt    # catalogo de assinaturas
+    analyzers/
+      EmulatorAnalyzer.kt     # detecta AVD/QEMU/Genymotion
+      CloneAnalyzer.kt        # detecta VirtualApp/Parallel Space
+      VirtualizationAnalyzer.kt # detecta Frida/Xposed
+      RootDetector.kt         # detecta root/su/Magisk
+      SignatureAnalyzer.kt    # verifica assinatura do APK
+  ui/
+    MainActivity.kt           # interface do usuario
+\end{lstlisting}
+
+\subsection{Fluxo de Execução}
+
+\begin{lstlisting}
+MainActivity
+    |
+    v
+EnvironmentGuard.generateReport()
+    |
+    +-- async --> EmulatorAnalyzer.analyze()     ---+
+    +-- async --> CloneAnalyzer.analyze()        ---+
+    +-- async --> VirtualizationAnalyzer.analyze()--+--> flatten()
+    +-- async --> RootDetector.analyze()         ---+        |
+    +-- async --> SignatureAnalyzer.analyze()    ---+        v
+                                                       SecurityReport
+                                                            |
+                                                    isTampered / riskScore
+                                                    emulatorProbability
+                                                    summary
+\end{lstlisting}
+
+Os quatro analisadores rodam em paralelo via coroutines Kotlin.
+Qualquer falha individual é capturada silenciosamente --- o relatório
+continua com os sinais dos demais analisadores.
+
+\newpage
+
+% ─── ARQUIVO 1 ───────────────────────────────────────────────────────────────
+\section{EnvironmentAnalyzer.kt --- O Contrato}
+
+\begin{lstlisting}
+fun interface EnvironmentAnalyzer {
+    fun analyze(context: Context): List<DetectionSignal>
+}
+\end{lstlisting}
+
+\subsection{O que e}
+
+Uma \texttt{fun interface} --- um contrato com um unico metodo.
+Qualquer classe que quiser ser um analisador de ambiente implementa esse contrato.
+
+\subsection{Por que comecar aqui}
+
+Toda a arquitetura do projeto nasce desse contrato.
+Antes de falar de emulador, root ou Frida, a pergunta que o projeto responde e:
+\textit{``qual e a forma padrao de perguntar ao ambiente se algo esta errado?''}
+
+\begin{historybox}
+\textbf{Historia: fun interface e SAM Conversion}
+
+O Java introduziu interfaces funcionais no Java 8 (2014) com a anotacao
+\texttt{@FunctionalInterface}. A ideia veio das linguagens funcionais --- Haskell,
+ML, Scala --- onde funcoes sao valores de primeira classe.
+
+O Kotlin evoluiu o conceito com \texttt{fun interface} (SAM --- Single Abstract Method):
+qualquer interface com um unico metodo pode ser instanciada com uma lambda diretamente,
+sem precisar de classe anonima.
+
+\begin{lstlisting}
+// Sem fun interface (verbose):
+val fake = object : EnvironmentAnalyzer {
+    override fun analyze(ctx: Context) = listOf(sinal)
+}
+
+// Com fun interface (SAM):
+val fake = EnvironmentAnalyzer { listOf(sinal) }
+\end{lstlisting}
+
+Nos testes, isso e fundamental --- criar analisadores falsos fica trivial.
+\end{historybox}
+
+\subsection{Decisoes de Design}
+
+\begin{itemize}
+  \item Recebe \texttt{Context} --- passaporte do Android para acessar PackageManager,
+        ApplicationInfo, etc.
+  \item Retorna \texttt{List<DetectionSignal>} e nao \texttt{Boolean} --- um
+        analisador pode encontrar varios problemas simultaneamente.
+  \item E uma \texttt{interface} e nao \texttt{abstract class} --- permite composicao
+        sem heranca rigida.
+\end{itemize}
+
+\newpage
+
+% ─── ARQUIVO 2 ───────────────────────────────────────────────────────────────
+\section{DetectionSignal.kt --- Os Dados}
+
+\begin{lstlisting}
+enum class SignalCategory(val displayName: String) {
+    EMULATOR("Emulator"),
+    CLONE_APP("Clone / Dual-Space App"),
+    VIRTUALIZATION("Virtualization / Hooking"),
+    ROOT("Root / Superuser"),
+    SIGNATURE("Signature / Integrity"),
+    SUSPICIOUS_PATH("Suspicious Path"),
+    SYSTEM_PROPERTY("Suspicious System Property"),
+}
+
+enum class Severity { LOW, MEDIUM, HIGH }
+
+data class DetectionSignal(
+    val category: SignalCategory,
+    val description: String,
+    val severity: Severity,
+    val explanation: String = "",
+)
+\end{lstlisting}
+
+\subsection{Os tres tipos}
+
+\textbf{SignalCategory} --- de onde veio o sinal (qual analisador, qual ameaca).
+
+\textbf{Severity} --- o peso do sinal:
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+Valor & Significado & Contribuicao ao riskScore \\
+\midrule
+LOW & Informacional, nao prova nada sozinho & 0 \\
+MEDIUM & Suspeito, aumenta o risco & 1 \\
+HIGH & Forte indicador de adulteracao & 3 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{DetectionSignal} --- o sinal em si com quatro campos.
+
+\begin{historybox}
+\textbf{Historia: data class no Kotlin}
+
+Em Java, criar uma classe de dados exigia escrever manualmente \texttt{equals()},
+\texttt{hashCode()}, \texttt{toString()} e \texttt{copy()} --- dezenas de linhas
+de codigo boilerplate propensas a bugs.
+
+A JetBrains criou o Kotlin em 2011 (lancado em 2016) com \texttt{data class}:
+uma unica palavra-chave gera todos esses metodos automaticamente.
+
+\begin{lstlisting}
+// Java: ~40 linhas
+// Kotlin:
+data class DetectionSignal(
+    val category: SignalCategory,
+    val description: String,
+    val severity: Severity,
+)
+\end{lstlisting}
+
+Importante para os testes: \texttt{assertEquals(sinal1, sinal2)} funciona
+por valor (compara campos), nao por referencia (compara ponteiros).
+\end{historybox}
+
+\newpage
+
+% ─── ARQUIVO 3 ───────────────────────────────────────────────────────────────
+\section{SecurityReport.kt --- O Resultado}
+
+\begin{lstlisting}
+data class SecurityReport(val signals: List<DetectionSignal>) {
+
+    val isTampered: Boolean
+        get() = signals.any { it.severity != Severity.LOW }
+
+    val riskScore: Int
+        get() = signals.sumOf { signal ->
+            when (signal.severity) {
+                Severity.HIGH   -> 3
+                Severity.MEDIUM -> 1
+                Severity.LOW    -> 0
+            }.toInt()
+        }
+
+    val emulatorProbability: Float
+        get() {
+            var p = 0.0
+            emulatorSignals.forEach { signal ->
+                p += (1.0 - p) * when (signal.severity) {
+                    Severity.HIGH   -> 0.80
+                    Severity.MEDIUM -> 0.50
+                    Severity.LOW    -> 0.10
+                }
+            }
+            return p.toFloat().coerceIn(0f, 1f)
+        }
+}
+\end{lstlisting}
+
+\subsection{isTampered}
+
+Se existe qualquer sinal MEDIUM ou HIGH, o ambiente e considerado adulterado.
+LOW sozinho e apenas informacional.
+
+\subsection{riskScore}
+
+HIGH vale 3 pontos, MEDIUM vale 1. Permite comparar gravidade entre dispositivos.
+Um score 9 e muito mais grave que score 3, mesmo que ambos sejam \texttt{isTampered = true}.
+
+\subsection{emulatorProbability --- A Matematica Bayesiana}
+
+\begin{historybox}
+\textbf{Historia: Thomas Bayes e Probabilidade Independente (1763)}
+
+Thomas Bayes, matematico ingles, publicou em 1763 (postumamente) o teorema
+que leva seu nome. A ideia central: \textbf{evidencias independentes se acumulam}.
+
+A formula usada no codigo:
+$$P = 1 - \prod_{i}(1 - p_i)$$
+
+Na pratica: cada novo sinal contribui com a probabilidade restante de ainda
+nao ter sido detectado:
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+Sinal & Calculo & Resultado \\
+\midrule
+1 HIGH (0.80) & $0 + (1-0) \times 0.80$ & $0.80$ \\
+2 HIGH (0.80) & $0.80 + (1-0.80) \times 0.80$ & $0.96$ \\
+3 MEDIUM (0.50) & $0.96 + (1-0.96) \times 0.50$ & $0.98$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Por que nao somar? Porque $0.80 + 0.80 + 0.50 = 2.10$ e impossivel
+(probabilidade nao pode ultrapassar 1.0).
+\end{historybox}
+
+\newpage
+
+% ─── ARQUIVO 4 ───────────────────────────────────────────────────────────────
+\section{EnvironmentGuard.kt --- O Orquestrador}
+
+\begin{lstlisting}
+class EnvironmentGuard private constructor(private val context: Context) {
+
+    private val analyzers: List<EnvironmentAnalyzer> = listOf(
+        EmulatorAnalyzer(),
+        CloneAnalyzer(),
+        VirtualizationAnalyzer(),
+        SignatureAnalyzer(),
+        RootDetector(),
+    )
+
+    suspend fun generateReport(): SecurityReport = coroutineScope {
+        val deferred = analyzers.map { analyzer ->
+            async(Dispatchers.Default) {
+                runCatching { analyzer.analyze(context) }.getOrDefault(emptyList())
+            }
+        }
+        SecurityReport(deferred.awaitAll().flatten())
+    }
+
+    companion object {
+        fun create(context: Context): EnvironmentGuard =
+            EnvironmentGuard(context.applicationContext)
+    }
+}
+\end{lstlisting}
+
+\subsection{private constructor + companion object}
+
+O construtor e privado --- ninguem cria \texttt{EnvironmentGuard(context)} diretamente.
+A unica forma e via \texttt{EnvironmentGuard.create(this)}.
+
+Isso forca o uso de \texttt{context.applicationContext} em vez do
+\texttt{Activity context}, evitando memory leak --- a Activity pode ser destruida,
+o \texttt{applicationContext} nao.
+
+\subsection{Execucao Paralela com Coroutines}
+
+\begin{historybox}
+\textbf{Historia: Coroutines e Concorrencia}
+
+O conceito de coroutines foi proposto por \textbf{Melvin Conway} em 1963 --- o mesmo
+Conway da Lei de Conway. A ideia: funcoes que podem suspender e resumir execucao
+sem bloquear uma thread.
+
+O Kotlin implementou coroutines como biblioteca de primeira classe em 2018.
+\texttt{async/await} permite paralelismo sem callbacks ou thread pools manuais:
+
+\begin{lstlisting}
+// Sem paralelismo (sequencial - mais lento):
+analyzers.forEach { it.analyze(context) }
+
+// Com async/await (paralelo):
+val deferred = analyzers.map { async(Dispatchers.Default) { it.analyze(context) } }
+deferred.awaitAll()  // espera todos terminarem
+\end{lstlisting}
+
+Cada analisador roda em \texttt{Dispatchers.Default} --- um pool de threads
+otimizado para operacoes de CPU. File I/O e network probes nao bloqueiam uns aos outros.
+\end{historybox}
+
+\subsection{runCatching --- Isolamento de Falhas}
+
+\begin{lstlisting}
+runCatching { analyzer.analyze(context) }.getOrDefault(emptyList())
+\end{lstlisting}
+
+Se um analisador crasha, o erro e capturado silenciosamente e retorna lista vazia.
+Um analisador quebrado nao derruba o relatorio inteiro.
+
+\newpage
+
+% ─── ARQUIVO 5 ───────────────────────────────────────────────────────────────
+\section{EmulatorAnalyzer.kt --- Detectando Emuladores}
+
+\begin{lstlisting}
+override fun analyze(context: Context): List<DetectionSignal> =
+    checkBuildProperties() +
+    checkSystemProperties() +
+    checkEmulatorFiles() +
+    checkCpuInfo()
+\end{lstlisting}
+
+\begin{historybox}
+\textbf{Historia: QEMU e o AVD (2003-2007)}
+
+\textbf{Fabrice Bellard}, engenheiro frances, criou o \textbf{QEMU} em 2003 ---
+emulador de processador completo que executa instrucoes ARM num computador x86.
+Bellard e famoso na comunidade por projetos extremos: tambem criou o FFmpeg.
+
+O Google pegou o QEMU, colocou o Android por cima, e chamou de \textbf{AVD}
+(Android Virtual Device) em 2007. Os engenheiros escolheram ``goldfish'' como
+nome do perfil de hardware virtual. Ninguem pensou que isso seria um ponto
+fraco de seguranca duas decadas depois.
+\end{historybox}
+
+\subsection{Camada 1: checkBuildProperties()}
+
+\begin{lstlisting}
+val hardware = Build.HARDWARE.lowercase()
+if (hardware in setOf("goldfish", "ranchu", "vbox86", "nox"))
+    signal("Emulator hardware detected: ${Build.HARDWARE}")
+\end{lstlisting}
+
+\texttt{Build.*} sao constantes gravadas em \texttt{/system/build.prop} pelo
+fabricante durante a compilacao. Em emuladores, a Google nao se preocupa em
+disfarcar:
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+Campo & Emulador vs Device Real \\
+\midrule
+\texttt{Build.HARDWARE} & \texttt{goldfish} vs \texttt{shiba} (Pixel 8 Pro) \\
+\texttt{Build.FINGERPRINT} & comeca com \texttt{generic} vs hash do fabricante \\
+\texttt{Build.MODEL} & \texttt{Android SDK built for x86} vs \texttt{Pixel 8 Pro} \\
+\texttt{Build.BRAND} & \texttt{generic} vs \texttt{google} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Camada 2: checkSystemProperties() via Reflection}
+
+\begin{lstlisting}
+val clazz = Class.forName("android.os.SystemProperties")
+val get = clazz.getMethod("get", String::class.java, String::class.java)
+val value = get.invoke(null, "ro.kernel.qemu", "")
+\end{lstlisting}
+
+\begin{historybox}
+\textbf{Historia: Reflection no Java (1997)}
+
+A Sun Microsystems adicionou Reflection ao Java 1.1 em 1997 como parte do
+Java Core Reflection API. A ideia: inspecionar e invocar qualquer classe
+e metodo em runtime, ignorando visibilidade (\texttt{private}, \texttt{internal}).
+
+\texttt{android.os.SystemProperties} e uma API \textbf{interna} do Android ---
+nao esta no SDK publico, nao compila se voce chamar diretamente.
+Via Reflection, voce burla essa restricao em runtime.
+\end{historybox}
+
+\subsection{Camada 3: checkEmulatorFiles()}
+
+\begin{lstlisting}
+val EMULATOR_PATHS = listOf(
+    "/dev/socket/qemud",       // socket QEMU host<->guest
+    "/dev/qemu_pipe",          // pipe de alta performance
+    "/dev/socket/genyd",       // Genymotion
+    "/system/bin/nox-prop",    // Nox
+)
+EMULATOR_PATHS.filter { File(it).exists() }
+\end{lstlisting}
+
+Arquivos de dispositivo criados pelo kernel do emulador no boot.
+Em hardware fisico, simplesmente nao existem.
+
+\subsection{Camada 4: checkCpuInfo() com charArrayOf}
+
+\begin{lstlisting}
+// "goldfish" nunca aparece como literal no APK compilado:
+val goldfish = charArrayOf('g','o','l','d','f','i','s','h').concatToString()
+val cpuInfo = File("/proc/cpuinfo").readText()
+if (cpuInfo.contains(goldfish)) { ... }
+\end{lstlisting}
+
+\begin{historybox}
+\textbf{Historia: /proc/cpuinfo e a tecnica charArrayOf}
+
+Tom Killian criou o \texttt{/proc} no Bell Labs em 1984. O arquivo
+\texttt{/proc/cpuinfo} expoe o tipo de CPU do hardware diretamente do kernel.
+Em emuladores QEMU, aparece ``QEMU Virtual CPU'' e ``goldfish'' ---
+o kernel do emulador se autoidentifica.
+
+A tecnica \texttt{charArrayOf} vem da pratica de obfuscacao de malware:
+se voce escrever \texttt{"goldfish"} como string literal, ela aparece em
+texto puro no APK e qualquer um executa \texttt{strings apk.apk | grep goldfish}.
+Construindo em runtime a partir de chars individuais, a string nunca
+existe como literal no binario.
+\end{historybox}
+
+\newpage
+
+% ─── ARQUIVO 6 ───────────────────────────────────────────────────────────────
+\section{CloneAnalyzer.kt --- Detectando Apps Clone}
+
+\begin{lstlisting}
+class CloneAnalyzer(
+    private val uidProvider: () -> Int = { Process.myUid() },
+    private val fileProbe: (String) -> Boolean = { File(it).exists() },
+    private val packageChecker: (Context, String) -> Boolean = { ctx, pkg ->
+        runCatching { ctx.packageManager.getPackageInfo(pkg, 0); true }
+            .getOrDefault(false)
+    },
+    private val dataDirProvider: (Context) -> String? = { it.applicationInfo?.dataDir },
+) : EnvironmentAnalyzer
+\end{lstlisting}
+
+\begin{historybox}
+\textbf{Historia: VirtualApp e o mercado de clones (2015)}
+
+Em 2015, um estudante universitario chines conhecido como \textbf{Lody} (GitHub: asLody)
+publicou o \textbf{VirtualApp} --- open source, em Java. A pergunta que motivou:
+\textit{``E se eu criasse um Android dentro do Android?''}
+
+O VirtualApp intercepta chamadas Binder (o protocolo IPC do Android, criado por
+\textbf{Dianne Hackborn} baseado no OpenBinder da Be Inc. em 1996) usando Reflection
+para substituir os proxies locais por versoes proprias.
+
+Em 2016, a \textbf{LBE Tech} lancou o \textbf{Parallel Space} baseado na mesma
+tecnica --- 50 milhoes de downloads em meses. Bancos viram isso em fraudes
+a partir de 2017: o clone framework interceptava camera, GPS e verificacoes
+de seguranca antes do app financeiro acessar.
+\end{historybox}
+
+\subsection{Camada 3: UID Offset --- A Deteccao Mais Elegante}
+
+\begin{lstlisting}
+val userId = uidProvider() / 100_000
+if (userId != 0) {
+    signals += DetectionSignal(
+        SignalCategory.CLONE_APP,
+        "App running under user ID $userId (non-primary user)",
+        Severity.HIGH
+    )
+}
+\end{lstlisting}
+
+\begin{historybox}
+\textbf{Historia: Android Multi-User e UIDs (2012)}
+
+Ken Thompson e Dennis Ritchie criaram o sistema de UIDs no Unix em 1969.
+No Android 4.2 (2012), a Google adicionou suporte a multiplos usuarios
+para tablets compartilhados por familias. A decisao de engenharia: alocar
+UIDs em blocos de 100.000 por usuario.
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+Usuario & Range de UIDs \\
+\midrule
+0 (primario) & 10.000 -- 99.999 \\
+1 (secundario) & 110.000 -- 199.999 \\
+2 & 210.000 -- 299.999 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{O clone app precisa de usuario secundario.} Nao ha como escapar.
+A decisao de engenharia de 2012 para familias em tablets virou,
+12 anos depois, a deteccao mais confiavel contra clone apps.
+
+\begin{lstlisting}
+// Device limpo:    myUid() = 10.153  / 100.000 = 0  -> sem sinal
+// Dentro do clone: myUid() = 110.153 / 100.000 = 1  -> HIGH
+\end{lstlisting}
+\end{historybox}
+
+\subsection{Camada 5: /proc/self/maps e .so baked-in}
+
+\begin{lstlisting}
+File("/proc/self/maps").forEachLine { line ->
+    if (line.contains("io.va", ignoreCase = true)) {
+        signals += DetectionSignal(...)
+    }
+}
+\end{lstlisting}
+
+\begin{historybox}
+\textbf{Historia: ELF, shared libraries e paths baked-in (1988)}
+
+O formato \textbf{ELF} (Executable and Linkable Format) foi introduzido
+no Unix System V em 1988. Shared libraries (\texttt{.so}) tem seus paths
+de origem gravados pelo linker dentro do proprio binario compilado --- o \textbf{rpath}.
+
+Um atacante pode renomear o APK do VirtualApp com \texttt{apktool}.
+Mas o \texttt{libva.so} dentro do APK e um binario compilado --- o \texttt{apktool}
+nao toca nele. O path \texttt{com.lody.virtual} continua baked-in no binario.
+
+O \texttt{/proc/self/maps} --- criado por Tom Killian no Bell Labs em 1984 ---
+expoe quais \texttt{.so} estao carregadas na memoria. O kernel nao mente.
+\end{historybox}
+
+\subsection{Injecao de Dependencias para Testabilidade}
+
+\begin{historybox}
+\textbf{Historia: Dependency Injection e TDD (Michael Feathers, 2004)}
+
+\textbf{Michael Feathers} formalizou em 2004 no livro \textit{``Working Effectively
+with Legacy Code''}: qualquer codigo que nao pode ser testado sem o ambiente
+real e legacy code, independente de quando foi escrito.
+
+A solucao: substituir chamadas ao sistema por parametros injetaveis.
+No Kotlin moderno, uma lambda com valor default resolve sem frameworks:
+
+\begin{lstlisting}
+// Producao: usa sistema real (nao passa nada)
+val analyzer = CloneAnalyzer()
+
+// Teste: simula UID 110.000 (usuario secundario)
+val analyzer = CloneAnalyzer(uidProvider = { 110_042 })
+\end{lstlisting}
+\end{historybox}
+
+\newpage
+
+% ─── ARQUIVO 7 ───────────────────────────────────────────────────────────────
+\section{VirtualizationAnalyzer.kt --- Detectando Hooking}
+
+\begin{lstlisting}
+override fun analyze(context: Context): List<DetectionSignal> =
+    checkHookFiles() +
+    checkProcMaps() +
+    checkXposedClassLoader() +
+    checkFrida()
+\end{lstlisting}
+
+\subsection{checkHookFiles() --- Artefatos de Cada Framework}
+
+\begin{historybox}
+\textbf{Historia: Xposed Framework (rovo89, Alemanha, 2012)}
+
+rovo89 era um desenvolvedor alemao frustrado com a impossibilidade de modificar
+apps do sistema Android sem recompilar o Android inteiro. A solucao: substituir
+\texttt{/system/bin/app\_process} --- o programa que inicia o Zygote e e pai
+de todo app Android --- por uma versao que injetava \texttt{XposedBridge.jar}
+no classpath de todo processo.
+
+\medskip
+\textbf{Historia: LSPosed (comunidade, 2020)}
+
+O Xposed modificava \texttt{/system} diretamente, quebrando o \textbf{dm-verity}
+(verificacao criptografica de integridade da Google). O LSPosed usou Magisk
+como base --- monta um overlay virtual sem tocar no sistema real.
+
+\medskip
+\textbf{Historia: Cydia Substrate (Jay ``saurik'' Freeman, EUA, 2008)}
+
+Jay Freeman criou o Cydia em 2008 --- loja alternativa para iPhone com jailbreak.
+O Cydia Substrate usava \texttt{LD\_PRELOAD} (feature do linker Unix) para forcar
+o carregamento de sua biblioteca antes de qualquer outra.
+
+\medskip
+\textbf{Historia: Magisk (topjohnwu / Wang Guang, Taiwan, 2016)}
+
+Estudante taiwanes criou o Magisk: \textbf{systemless root} --- monta \texttt{tmpfs}
+(filesystem em RAM) sobre \texttt{/system}. O Android ve modificacoes.
+O sistema real esta intacto. O dm-verity fica feliz.
+\end{historybox}
+
+\subsection{checkXposedClassLoader() --- O Classpath como Detector}
+
+\begin{lstlisting}
+try {
+    Class.forName("de.robv.android.xposed.XposedBridge")
+    signals += DetectionSignal(..., Severity.HIGH)  // encontrou = Xposed ativo
+} catch (_: ClassNotFoundException) { /* device limpo */ }
+\end{lstlisting}
+
+\begin{historybox}
+\textbf{Historia: ClassLoader e Lazy Loading (James Gosling, 1995)}
+
+James Gosling projetou o Java em 1995 com \textbf{lazy loading} --- classes
+so existem quando pedidas. O ClassLoader busca no classpath quando
+\texttt{Class.forName()} e chamado.
+
+O Xposed injeta \texttt{XposedBridge.jar} no classpath do \textbf{Zygote}.
+Todo processo filho herda o classpath do pai. Logo,
+\texttt{de.robv.android.xposed.XposedBridge} fica acessivel em qualquer app.
+
+Se \texttt{Class.forName()} nao lanca \texttt{ClassNotFoundException},
+o JAR do Xposed esta no classpath --- o framework esta ativo.
+\end{historybox}
+
+\subsection{checkFrida() --- A Deteccao Mais Sofisticada}
+
+\begin{historybox}
+\textbf{Historia: Frida (Ole Andre V. Ravnas, Noruega, 2014)}
+
+Ole Andre queria algo que o GDB (criado por Richard Stallman em 1986)
+nao oferecia: injetar JavaScript num processo em execucao, sem pausar,
+interativamente. Criou o Frida em 2014.
+
+Arquitetura cliente-servidor: \texttt{frida-server} roda como root no device,
+usa \texttt{ptrace()} --- chamada de sistema Unix criada em \textbf{1979}
+no Unix V7 pelos engenheiros da Bell Labs --- para injetar \texttt{frida-agent.so}
+no processo alvo via o dynamic linker.
+\end{historybox}
+
+\begin{lstlisting}
+// Deteccao 1: probe de socket (150ms timeout)
+Socket().use { socket ->
+    socket.connect(InetSocketAddress("127.0.0.1", 27042), 150)
+    signals += DetectionSignal(..., Severity.HIGH)
+}
+
+// Deteccao 2: /proc/net/tcp fallback
+if (signals.none { it.description.contains("Frida server") }) {
+    signals += checkFridaTcpTable("/proc/net/tcp")
+    signals += checkFridaTcpTable("/proc/net/tcp6")
+}
+\end{lstlisting}
+
+\begin{historybox}
+\textbf{Bug encontrado e corrigido: porta Frida}
+
+Durante o desenvolvimento foi encontrado um bug critico:
+
+\begin{lstlisting}
+// Codigo com bug:
+val fridaPortHex = "699A"  // = 27034 decimal -- ERRADO
+
+// Codigo correto:
+val fridaPortHex = "69A2"  // = 27042 decimal -- CORRETO
+\end{lstlisting}
+
+\texttt{hex(27042) = 0x69A2}. O codigo anterior procurava a porta 27034
+no \texttt{/proc/net/tcp}. O Frida escuta em 27042. O fallback inteiro
+era ineficaz --- silenciosamente, sem erro.
+
+Os testes passavam porque testavam a logica do parser com linhas
+sinteticas, nao a conversao do numero da porta.
+\end{historybox}
+
+\subsubsection{O formato do /proc/net/tcp}
+
+\begin{historybox}
+\textbf{Historia: Big-Endian vs Little-Endian (1978 vs 1974)}
+
+O arquivo \texttt{/proc/net/tcp} mistura duas convencoes historicas:
+
+\begin{lstlisting}
+local_address = "0100007F:69A2"
+                 ^^^       ^^^
+              little-endian  big-endian
+              (Intel 1978)   (TCP/IP 1974)
+\end{lstlisting}
+
+O IP \texttt{0100007F} usa little-endian porque o kernel Linux roda em
+processadores Intel x86, que desde 1978 armazenam bytes do menos significativo
+primeiro. A porta \texttt{69A2} usa big-endian (network byte order) porque o
+protocolo TCP foi definido por \textbf{Vint Cerf} e \textbf{Bob Kahn} em 1974
+com bytes do mais significativo primeiro.
+
+O estado \texttt{0A} = 10 decimal = \texttt{TCP\_LISTEN} --- a maquina de
+estados TCP foi formalizada por Cerf e Kahn no mesmo paper de 1974.
+
+\textbf{Danny Cohen} da USC cunhou os termos ``big-endian'' e ``little-endian''
+em 1980 no paper \textit{``On Holy Wars and a Plea for Peace''}, referenciando
+o livro \textit{As Viagens de Gulliver} de Jonathan Swift.
+\end{historybox}
+
+\newpage
+
+% ─── ARQUIVO 8 ───────────────────────────────────────────────────────────────
+\section{RootDetector.kt --- Detectando Root}
+
+\begin{lstlisting}
+class RootDetector(
+    private val fileProbe: (String) -> Boolean = { File(it).exists() },
+    private val writableProbe: (String) -> Boolean =
+        { File(it).run { exists() && canWrite() } },
+    private val packageChecker: (Context, String) -> Boolean = { ctx, pkg ->
+        runCatching { ctx.packageManager.getPackageInfo(pkg, 0); true }
+            .getOrDefault(false)
+    },
+) : EnvironmentAnalyzer
+\end{lstlisting}
+
+\begin{historybox}
+\textbf{Historia: Root no Unix e Android (1969 -- hoje)}
+
+Ken Thompson e Dennis Ritchie criaram o usuario \textbf{root} (UID 0) no Unix
+em 1969 --- acesso irrestrito, sem limitacoes.
+
+No Android, root nao existe por padrao. A Google removeu deliberadamente.
+Mas a comunidade criou ferramentas:
+
+\medskip
+\textbf{SuperSU (Chainfire, Holanda, 2012)} --- o padrao-ouro por anos.
+Mostrava um popup pedindo permissao cada vez que um app tentava elevar privilegios.
+Em 2017, Chainfire vendeu para uma empresa chinesa (CCMT). A comunidade migrou.
+
+\medskip
+\textbf{Magisk (topjohnwu / Wang Guang, Taiwan, 2016)} --- systemless root.
+O Android tem \textbf{dm-verity}: verificacao criptografica de cada bloco da
+particao \texttt{/system} no boot. Root tradicional quebrava o dm-verity.
+Magisk monta \texttt{tmpfs} sobre \texttt{/system} sem modificar o original.
+
+\medskip
+\textbf{KingRoot, Kingo Root (China, 2013-2014)} --- populares no mercado
+asiatico por rootear sem desbloquear o bootloader, explorando vulnerabilidades
+do kernel.
+\end{historybox}
+
+\subsection{Camada 1: checkSuBinaries()}
+
+\begin{lstlisting}
+internal fun checkSuBinaries(): List<DetectionSignal> =
+    DetectionSignatures.SU_PATHS.filter { fileProbe(it) }.map { path ->
+        DetectionSignal(SignalCategory.ROOT, "Root binary found: $path", HIGH)
+    }
+\end{lstlisting}
+
+O binario \texttt{su} (switch user) e um dos mais antigos do Unix.
+Em Android de producao, nao existe. Ferramentas de root o instalam em:
+\texttt{/system/bin/su}, \texttt{/system/xbin/su}, \texttt{/sbin/su}, \texttt{/su/bin/su}.
+
+\subsection{Camada 3: checkDangerousProps()}
+
+\begin{lstlisting}
+val explanation = when (prop) {
+    "ro.debuggable" -> "ro.debuggable=1 habilita JDWP em qualquer processo..."
+    "ro.secure"     -> "ro.secure=0 concede shell root via ADB sem autenticacao..."
+    "ro.build.type" -> "Build type 'eng' ou 'userdebug' indica ambiente nao-producao..."
+}
+\end{lstlisting}
+
+\begin{historybox}
+\textbf{Historia: JDWP e ro.debuggable}
+
+\textbf{JDWP} (Java Debug Wire Protocol) foi criado pela Sun Microsystems em 1998
+como parte do Java Platform Debugger Architecture. Permite que qualquer processo
+seja depurado via rede --- leitura de memoria, modificacao de variaveis em runtime.
+
+\texttt{ro.debuggable=1} habilita JDWP em qualquer processo do sistema,
+incluindo apps com \texttt{android:debuggable=false}. Em builds de producao sempre
+e 0. Presente apenas em builds de engenharia ou dispositivos rootados.
+
+\texttt{ro.build.type} tem tres valores:
+\texttt{user} (producao), \texttt{userdebug} (depuracao habilitada), \texttt{eng} (root automatico).
+\end{historybox}
+
+\subsection{Camada 4: checkWritableSystemPaths()}
+
+\begin{lstlisting}
+internal fun checkWritableSystemPaths(): List<DetectionSignal> =
+    DetectionSignatures.WRITABLE_SYSTEM_PATHS.filter { writableProbe(it) }.map { path ->
+        DetectionSignal(SignalCategory.ROOT,
+            "System path is writable -- indicates root mount: $path", HIGH)
+    }
+\end{lstlisting}
+
+Em todo device de producao, \texttt{/system} e montado como \textbf{read-only}
+pelo \texttt{init} no boot. O dm-verity garante isso criptograficamente.
+\texttt{File("/system").canWrite() == true} e impossivel em device limpo.
+
+\newpage
+
+% ─── ARQUIVO 9 ───────────────────────────────────────────────────────────────
+\section{SignatureAnalyzer.kt --- Verificando Integridade do APK}
+
+\begin{lstlisting}
+override fun analyze(context: Context): List<DetectionSignal> =
+    checkCertificate(context) +
+    checkInstallerSource(context) +
+    checkPackageNameConsistency(context)
+\end{lstlisting}
+
+\begin{historybox}
+\textbf{Historia: Criptografia de Chave Publica e X.509 (1976-1988)}
+
+\textbf{Whitfield Diffie} e \textbf{Martin Hellman} publicaram em 1976
+\textit{``New Directions in Cryptography''} --- inventando a criptografia de
+chave publica. Voce tem duas chaves matematicamente ligadas: a privada (so voce
+tem) assina, a publica (todos podem ter) verifica. Impossivel forjar sem a privada.
+
+Em 1988, a \textbf{ITU-T} publicou o \textbf{X.509} --- formato padrao para
+certificados digitais. Um certificado X.509 contem: subject (quem e), issuer
+(quem emitiu), validade, chave publica e assinatura.
+
+O Android usa X.509 para assinar APKs desde a versao 1.0.
+\end{historybox}
+
+\subsection{Camada 1: Debug Key Detection}
+
+\begin{lstlisting}
+val cert = CertificateFactory.getInstance("X.509")
+    .generateCertificate(ByteArrayInputStream(sig.toByteArray())) as X509Certificate
+val subject = cert.subjectDN.name
+if (subject.contains("Android Debug", ignoreCase = true)) {
+    signals += DetectionSignal(..., Severity.MEDIUM)
+}
+\end{lstlisting}
+
+Quando voce instala o Android Studio, ele cria automaticamente um
+\textbf{debug keystore} com subject sempre igual a \texttt{CN=Android Debug, O=Android, C=US}.
+Todo desenvolvedor no mundo tem esse mesmo subject.
+
+Quando um atacante usa \texttt{apktool} para modificar e reassinar um APK,
+ele usa sua propria debug key. O subject \texttt{CN=Android Debug} no APK
+de producao e o fingerprint mais obvio de um repackaging.
+
+\subsection{Camada 2: SHA-256 Hash Comparison}
+
+\begin{lstlisting}
+private fun computeHash(signature: Signature, algorithm: String): String =
+    MessageDigest.getInstance(algorithm)
+        .digest(signature.toByteArray())
+        .joinToString("") { "%02X".format(it) }
+\end{lstlisting}
+
+\begin{historybox}
+\textbf{Historia: SHA-256 (NSA, 2001)}
+
+SHA (Secure Hash Algorithm) foi desenvolvido pela \textbf{NSA} e publicado
+pelo \textbf{NIST} em 1993. O SHA-256, parte da familia SHA-2, saiu em 2001.
+
+Propriedade fundamental: qualquer mudanca no input, por menor que seja,
+muda completamente o output. Trocar um bit no APK muda o hash inteiramente.
+
+\texttt{MessageDigest} foi introduzido no Java 1.1 em 1997 pela Sun Microsystems
+como parte do Java Cryptography Architecture.
+\end{historybox}
+
+\subsection{A API Dividida: Android P (2018)}
+
+\begin{lstlisting}
+if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+    // Android 9+ (2018): APK Signature Scheme v3, suporta rotacao de chaves
+    pm.getPackageInfo(packageName, GET_SIGNING_CERTIFICATES)
+        .signingInfo?.apkContentsSigners
+} else {
+    @Suppress("DEPRECATION")
+    pm.getPackageInfo(packageName, GET_SIGNATURES).signatures
+}
+\end{lstlisting}
+
+O Android 9 introduziu o APK Signature Scheme v3 com suporte a rotacao de chaves.
+A API antiga nao suportava multiplos certificados historicos e foi deprecada.
+
+\newpage
+
+% ─── ARQUIVO 10 ──────────────────────────────────────────────────────────────
+\section{DetectionSignatures.kt --- O Catalogo Centralizado}
+
+\begin{lstlisting}
+internal object DetectionSignatures {
+    val KNOWN_CLONE_PACKAGES = listOf(
+        "com.lbe.parallel.intl",   // Parallel Space
+        "com.lody.virtual",        // VirtualApp
+        "me.weishu.exp",           // VirtualXposed
+        // ... 21 outros
+    )
+    val SU_PATHS = listOf("/system/bin/su", "/system/xbin/su", ...)
+    val ROOT_PACKAGES = listOf("com.topjohnwu.magisk", "eu.chainfire.supersu", ...)
+    val HOOK_PATHS = listOf("/system/framework/XposedBridge.jar", ...)
+    val LEGITIMATE_INSTALLERS = setOf("com.android.vending", ...)
+    // ...
+}
+\end{lstlisting}
+
+\begin{historybox}
+\textbf{Historia: Single Responsibility Principle (Robert C. Martin, 2000)}
+
+\textbf{Robert C. Martin} (Uncle Bob) formalizou o \textbf{Single Responsibility
+Principle} em 2000: cada modulo deve ter apenas uma razao para mudar.
+
+Antes desse arquivo, cada analisador mantinha suas proprias listas de
+assinaturas. Quando um novo clone app aparecia, voce precisava atualizar
+varios arquivos. \texttt{DetectionSignatures} centraliza: so um arquivo
+muda quando a threat intelligence muda.
+
+\texttt{internal object} garante que o catalogo e visivel em todo o modulo
+\texttt{:app} mas invisivel fora dele --- os dados de seguranca nao vazam
+para dependencias externas.
+\end{historybox}
+
+\newpage
+
+% ─── ARQUIVO 11 ──────────────────────────────────────────────────────────────
+\section{AndroidManifest.xml --- A Configuracao}
+
+\begin{lstlisting}
+<queries>
+    <package android:name="com.lbe.parallel.intl" />
+    <package android:name="com.lody.virtual" />
+    <!-- ... 22 outros clone apps -->
+</queries>
+\end{lstlisting}
+
+\begin{historybox}
+\textbf{Historia: Package Visibility Filtering no Android 11 (2020)}
+
+Antes do Android 11, qualquer app podia chamar
+\texttt{PackageManager.getInstalledPackages()} e ver todos os apps instalados.
+
+O Google, preocupado com privacidade, introduziu o \textbf{Package Visibility
+Filtering} no Android 11 (API 30, 2020): apps sao invisiveis ao PackageManager
+a menos que explicitamente declarados no \texttt{<queries>}.
+
+Sem essa lista, no Android 11+, o \texttt{CloneAnalyzer} ficaria completamente
+cego para apps clone --- \texttt{getPackageInfo("com.lbe.parallel.intl")}
+lancaria \texttt{NameNotFoundException} como se o app nao existisse.
+
+A alternativa seria \texttt{QUERY\_ALL\_PACKAGES}, mas o Google rejeita
+apps na Play Store que pedem isso sem justificativa forte.
+\end{historybox}
+
+\newpage
+
+% ─── CONCEITOS TRANSVERSAIS ───────────────────────────────────────────────────
+\section{Conceitos Transversais}
+
+\subsection{O Padrao de Injecao de Dependencias}
+
+Todos os analisadores usam o mesmo padrao:
+
+\begin{lstlisting}
+class RootDetector(
+    private val fileProbe: (String) -> Boolean = { File(it).exists() },
+    // ...
+)
+\end{lstlisting}
+
+Em producao: funcoes reais do sistema (nao passa nada, usa defaults).
+Nos testes: lambdas que simulam qualquer cenario sem precisar de device.
+
+Esse padrao foi formalizado por \textbf{Michael Feathers} em 2004 e e a base
+para todos os testes unitarios do projeto (usando \textbf{MockK}).
+
+\subsection{runCatching e Result<T>}
+
+\begin{lstlisting}
+runCatching { parseTcpTable(File(path).readLines(), path) }
+    .getOrDefault(emptyList())
+\end{lstlisting}
+
+Em C (Dennis Ritchie, 1972), erros eram tratados por valor de retorno.
+Em C++ (Bjarne Stroustrup, 1983) e Java (James Gosling, 1995), vieram
+as excecoes com \texttt{try/catch}.
+
+Linguagens funcionais dos anos 80 (Haskell, ML) propuseram tratar o erro
+como um \textbf{valor} --- \texttt{Result<T>} do Kotlin encapsula o resultado
+como sucesso ou falha sem interromper o fluxo.
+
+\subsection{O Binder IPC do Android}
+
+\begin{historybox}
+\textbf{Historia: OpenBinder e o protocolo de comunicacao do Android}
+
+Em 1996, a \textbf{Be Inc.} criou o \textbf{OpenBinder} para o BeOS ---
+comunicacao entre processos via mensagens estruturadas.
+A Be Inc. faliu em 2001. \textbf{Dianne Hackborn}, que trabalhava la,
+levou a ideia para o Google em 2005 e reimplementou como \textbf{Binder IPC}.
+
+Todo acesso ao sistema Android (PackageManager, LocationManager, etc.)
+passa pelo Binder. O Android coloca dentro de cada processo um proxy local:
+\texttt{IPackageManager.Stub.Proxy} --- o nome segue o padrao \textbf{CORBA (1991)}
+e \textbf{Java RMI (1997)}: Stub (lado servidor, desempacota) e Proxy
+(lado cliente, empacota).
+
+O VirtualApp substituia esses proxies via Reflection para interceptar
+todas as chamadas de sistema --- sem root, apenas com APIs publicas do Java.
+\end{historybox}
+
+\newpage
+
+% ─── BUG ENCONTRADO ──────────────────────────────────────────────────────────
+\section{Bug Encontrado e Corrigido}
+
+Durante o desenvolvimento foi identificado um bug critico no
+\texttt{VirtualizationAnalyzer.parseTcpTable()}:
+
+\begin{lstlisting}
+// ANTES (com bug):
+val fridaPortHex = "699A"   // 0x699A = 27034 decimal -- PORTA ERRADA
+
+// DEPOIS (corrigido):
+val fridaPortHex = "69A2"   // 0x69A2 = 27042 decimal -- PORTA CORRETA
+\end{lstlisting}
+
+\subsection{Como o bug foi encontrado}
+
+\begin{lstlisting}[language=Python]
+>>> hex(27042)         # porta real do Frida
+'0x69a2'
+>>> int('699A', 16)    # o que estava no codigo
+27034                  # ERRADO
+>>> int('69A2', 16)    # o que deveria estar
+27042                  # CORRETO
+\end{lstlisting}
+
+\subsection{Por que os testes nao pegaram}
+
+Os testes do \texttt{parseTcpTable} testavam a \textbf{logica do parser}
+com linhas sinteticas (rows com \texttt{"69A2"} hardcoded nos dados de teste),
+nao a \textbf{conversao numerica} da constante \texttt{FRIDA\_PORT} para hex.
+
+O fallback inteiro era ineficaz em producao: procurava a porta 27034
+enquanto o Frida escutava em 27042. Silenciosamente, sem excecao, sem aviso.
+
+\subsection{Impacto}
+
+Com o bug, um atacante usando \texttt{frida-server} com a porta padrao teria
+o probe de socket falhar (se bloqueado) E o fallback de \texttt{/proc/net/tcp}
+retornar falso negativo. Deteccao via TCP completamente cega.
+
+\newpage
+
+% ─── RESUMO FINAL ────────────────────────────────────────────────────────────
+\section{Resumo: Decadas de Historia em 500 Linhas de Kotlin}
+
+\begin{center}
+\begin{tabular}{p{3cm}p{4cm}p{6cm}}
+\toprule
+\textbf{Tecnica} & \textbf{Origem} & \textbf{Como usada no projeto} \\
+\midrule
+UIDs Unix & Bell Labs, 1969 & detecta clone apps pelo UID offset \\
+\texttt{/proc} filesystem & Bell Labs, 1984 & le \texttt{maps} e \texttt{net/tcp} \\
+ELF shared libs & Unix System V, 1988 & paths baked-in nos \texttt{.so} \\
+X.509 certificates & ITU-T, 1988 & verifica assinatura do APK \\
+Java Reflection & Sun, 1997 & acessa APIs internas do Android \\
+SHA-256 & NSA/NIST, 2001 & hash do certificado de assinatura \\
+Binder IPC & Be Inc./Google, 1996-2005 & base do VirtualApp que detectamos \\
+\texttt{ptrace()} & Bell Labs, 1979 & base do Frida que detectamos \\
+big/little-endian & Intel/TCP, 1974-1978 & parse do \texttt{/proc/net/tcp} \\
+Android multi-user & Google, 2012 & UID / 100.000 detecta clone \\
+Kotlin coroutines & JetBrains, 2018 & analisadores em paralelo \\
+Bayesian probability & Thomas Bayes, 1763 & \texttt{emulatorProbability} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\vspace{1cm}
+
+\begin{center}
+\textit{``A melhor deteccao de seguranca nao inventa novos truques.\\
+Ela usa as limitacoes estruturais que os atacantes nao conseguem esconder.''}
+\end{center}
+
+\end{document}
