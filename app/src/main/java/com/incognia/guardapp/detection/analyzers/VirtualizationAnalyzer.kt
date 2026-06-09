@@ -2,6 +2,7 @@ package com.incognia.guardapp.detection.analyzers
 
 import android.content.Context
 import com.incognia.guardapp.detection.DetectionSignal
+import com.incognia.guardapp.detection.DetectionSignatures
 import com.incognia.guardapp.detection.EnvironmentAnalyzer
 import com.incognia.guardapp.detection.Severity
 import com.incognia.guardapp.detection.SignalCategory
@@ -34,11 +35,13 @@ class VirtualizationAnalyzer : EnvironmentAnalyzer {
     // ── File artifacts ────────────────────────────────────────────────────────
 
     private fun checkHookFiles(): List<DetectionSignal> =
-        HOOK_PATHS.filter { File(it).exists() }.map { path ->
+        DetectionSignatures.HOOK_PATHS.filter { File(it).exists() }.map { path ->
             DetectionSignal(
                 SignalCategory.VIRTUALIZATION,
                 "Hook/virtualization file found: $path",
                 Severity.HIGH,
+                "Arquivo de um framework de instrumentação/hooking encontrado. Indica que a ferramenta " +
+                    "foi instalada ou está preparada para execução neste dispositivo.",
             )
         }
 
@@ -49,13 +52,16 @@ class VirtualizationAnalyzer : EnvironmentAnalyzer {
         val reported = mutableSetOf<String>()
         try {
             File("/proc/self/maps").forEachLine { line ->
-                MAP_PATTERNS.forEach { (pattern, label) ->
+                DetectionSignatures.HOOK_MAP_PATTERNS.forEach { (pattern, label) ->
                     if (pattern !in reported && line.contains(pattern, ignoreCase = true)) {
                         reported += pattern
                         signals += DetectionSignal(
                             SignalCategory.VIRTUALIZATION,
                             "$label detected in /proc/self/maps",
                             Severity.HIGH,
+                            "Biblioteca nativa de '$label' mapeada no espaço de memória deste processo. " +
+                                "Isso indica que o framework está ativo e pode estar interceptando " +
+                                "chamadas de método em tempo de execução.",
                         )
                     }
                 }
@@ -68,13 +74,16 @@ class VirtualizationAnalyzer : EnvironmentAnalyzer {
 
     private fun checkXposedClassLoader(): List<DetectionSignal> {
         val signals = mutableListOf<DetectionSignal>()
-        XPOSED_CLASS_NAMES.forEach { className ->
+        DetectionSignatures.XPOSED_CLASS_NAMES.forEach { className ->
             try {
                 Class.forName(className)
                 signals += DetectionSignal(
                     SignalCategory.VIRTUALIZATION,
                     "Xposed class accessible in classloader: $className",
                     Severity.HIGH,
+                    "O Xposed/LSPosed injeta automaticamente XposedBridge.jar no classloader de todo " +
+                        "processo ao iniciar. Se a classe é resolvível, o framework está ativo e pode " +
+                        "interceptar e modificar qualquer método Java/Kotlin em tempo de execução.",
                 )
             } catch (_: ClassNotFoundException) { /* expected on clean device */ }
         }
@@ -94,14 +103,14 @@ class VirtualizationAnalyzer : EnvironmentAnalyzer {
                     SignalCategory.VIRTUALIZATION,
                     "Frida server responding on localhost:$FRIDA_PORT",
                     Severity.HIGH,
+                    "O Frida é um framework de instrumentação dinâmica que permite interceptar e " +
+                        "modificar qualquer código em execução em tempo real, incluindo chamadas de " +
+                        "criptografia, autenticação e lógica de segurança. Porta padrão $FRIDA_PORT respondendo.",
                 )
             }
         } catch (_: Exception) { /* not listening */ }
 
         // /proc/net/tcp fallback — parse column-by-column to avoid false positives.
-        // Format: sl  local_address(IP:PORT)  rem_address  st  ...
-        // local_address is "XXXXXXXX:PPPP" where IP is little-endian hex and PORT is big-endian hex.
-        // State 0A = TCP_LISTEN. We require a LISTEN socket on the local side to confirm Frida.
         if (signals.none { it.description.contains("Frida server") }) {
             signals += checkFridaTcpTable("/proc/net/tcp")
             signals += checkFridaTcpTable("/proc/net/tcp6")
@@ -121,61 +130,42 @@ class VirtualizationAnalyzer : EnvironmentAnalyzer {
      * We only flag when the local port matches Frida's default AND the socket is in
      * LISTEN state, preventing false positives from remote-endpoint fields.
      */
-    private fun checkFridaTcpTable(path: String): List<DetectionSignal> {
+    private fun checkFridaTcpTable(path: String): List<DetectionSignal> =
+        runCatching { parseTcpTable(File(path).readLines(), path) }.getOrDefault(emptyList())
+
+    /**
+     * Pure parser exposed as [internal] so unit tests can feed synthetic rows
+     * without touching the real filesystem.
+     */
+    internal fun parseTcpTable(lines: List<String>, sourcePath: String = ""): List<DetectionSignal> {
+        // 27042 = 0x69A2 (hardcoded to avoid constant-inlining edge cases in internal fun)
+        val fridaPortHex = "69A2"
         val signals = mutableListOf<DetectionSignal>()
-        val fridaPortHex = "%04X".format(FRIDA_PORT)
-        try {
-            File(path).forEachLine { line ->
-                val parts = line.trim().split(Regex("\\s+"))
-                // parts[0]=sl, parts[1]=local_addr, parts[2]=rem_addr, parts[3]=state
-                if (parts.size >= 4) {
-                    val localPort = parts[1].substringAfter(":", "")
-                    val state = parts[3]
-                    if (localPort.equals(fridaPortHex, ignoreCase = true) && state == "0A") {
-                        signals += DetectionSignal(
-                            SignalCategory.VIRTUALIZATION,
-                            "Frida-default port ($FRIDA_PORT) in LISTEN state per $path",
-                            Severity.MEDIUM,
-                        )
-                    }
+        for (line in lines) {
+            val parts = line.trim().split(" ").filter { it.isNotEmpty() }
+            if (parts.size >= 4) {
+                val localPort = parts[1].substringAfter(":", missingDelimiterValue = "")
+                val state = parts[3]
+                if (localPort.equals(fridaPortHex, ignoreCase = true) && state.equals("0A", ignoreCase = true)) {
+                    signals += DetectionSignal(
+                        SignalCategory.VIRTUALIZATION,
+                        "Frida-default port ($FRIDA_PORT) in LISTEN state" +
+                            if (sourcePath.isNotEmpty()) " per $sourcePath" else "",
+                        Severity.MEDIUM,
+                        "Entrada no /proc/net/tcp mostra a porta $FRIDA_PORT em estado LISTEN (0A). " +
+                            "O servidor Frida está aguardando conexão de scripts de instrumentação, " +
+                            "mesmo que a conexão TCP direta tenha falhado.",
+                    )
                 }
             }
-        } catch (_: Exception) {}
+        }
         return signals
     }
 
     private companion object {
+        // Behavioral constants — timeouts and port numbers belong here,
+        // not in DetectionSignatures (which holds threat-intelligence data).
         const val FRIDA_PORT = 27042
         const val SOCKET_TIMEOUT_MS = 150
-
-        val HOOK_PATHS = listOf(
-            "/system/framework/XposedBridge.jar",
-            "/system/lib/libxposed_art.so",
-            "/system/lib64/libxposed_art.so",
-            "/data/data/de.robv.android.xposed.installer",
-            "/data/data/io.github.lsposed.manager",   // LSPosed
-            "/data/adb/lspd",                          // LSPosed daemon
-            "/data/local/tmp/frida-server",
-            "/data/local/tmp/re.frida.server",
-            "/data/local/frida-server",
-            "/system/lib/libsubstrate.so",             // Cydia Substrate
-            "/system/lib64/libsubstrate.so",
-            "/system/lib/libsubstratevm.so",
-            "/sbin/.magisk",                           // Magisk
-            "/sbin/.core/mirror",
-        )
-
-        val MAP_PATTERNS = mapOf(
-            "frida"       to "Frida instrumentation framework",
-            "xposed"      to "Xposed framework",
-            "substrate"   to "Cydia Substrate",
-            "va.hook"     to "VirtualApp hook layer",
-            "virtualapp"  to "VirtualApp framework",
-        )
-
-        val XPOSED_CLASS_NAMES = listOf(
-            "de.robv.android.xposed.XposedBridge",
-            "de.robv.android.xposed.XposedHelpers",
-        )
     }
 }
